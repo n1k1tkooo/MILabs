@@ -1,9 +1,7 @@
 # ДЗ1: Сравнительный анализ и настройка AI-инструментов
-
-**Слушатель курса:** n1k1tkooo  
+ 
 **Проект:** «DocuMind AI» — Корпоративная база знаний и интеллектуальный ассистент по регламентам компании  
 **Фокус занятия:** Российские LLM (YandexGPT, GigaCode), OpenSource (DeepSeek, Qwen), On-premise, 152-ФЗ и безопасность кода  
-**Статус:** Выполнены все 6 шагов в соответствии с критериями на статус «Принято»
 
 ---
 
@@ -121,36 +119,6 @@
 ### 4.2. Настройка MCP (Model Context Protocol)
 Для безопасного чтения локальных файлов нормативных документов и подключения к базе данных создан файл конфигурации `mcp_documind_config.json`:
 
-```json
-{
-  "mcpServers": {
-    "enterprise-docs-filesystem": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-filesystem",
-        "/Users/n1k1tkooo/.gemini/antigravity/scratch/ai-homeworks/hw1/docs"
-      ]
-    },
-    "pgvector-database": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-postgres",
-        "postgresql://postgres:postgres@localhost:5432/documind_db"
-      ]
-    },
-    "local-ollama-models": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@modelcontextprotocol/server-fetch",
-        "http://localhost:11434/api/tags"
-      ]
-    }
-  }
-}
-```
 
 ### 4.3. Инициализация тестового окружения
 Создан базовый проект с необходимым стеком:

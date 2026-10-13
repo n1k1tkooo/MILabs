@@ -2,7 +2,6 @@
 
 **Проект:** DocuMind AI  
 **Формат:** Enterprise B2B SaaS / On-premise Web-приложение  
-**Слушатель:** n1k1tkooo  
 
 ---
 
