@@ -1,0 +1,66 @@
+import { DocumentMeta, CurrentUser } from '../types';
+
+export const INITIAL_USER: CurrentUser = {
+  id: 'USR-891',
+  name: 'Алексей Смирнов',
+  role: 'user',
+  department: 'IT & Разработка',
+};
+
+export const MOCK_DOCUMENTS: DocumentMeta[] = [
+  {
+    id: 'DOC-SEC-01',
+    title: 'Регламент информационной безопасности и работы с паролями',
+    department: 'Информационная Безопасность',
+    version: '2.4',
+    accessLevel: 'internal',
+    updatedAt: '2026-09-15',
+    pagesCount: 14,
+    fileName: 'reg_sec_passwords_v2.4.pdf',
+    fileSizeMb: 1.8,
+  },
+  {
+    id: 'DOC-SEC-02',
+    title: 'Политика обработки персональных данных согласно 152-ФЗ РФ',
+    department: 'Информационная Безопасность',
+    version: '3.1',
+    accessLevel: 'public',
+    updatedAt: '2026-08-20',
+    pagesCount: 22,
+    fileName: 'policy_152fz_v3.1.pdf',
+    fileSizeMb: 2.4,
+  },
+  {
+    id: 'DOC-SEC-03',
+    title: 'Штатное расписание и матрицы компенсаций топ-менеджмента',
+    department: 'Служба Безопасности',
+    version: '1.0',
+    accessLevel: 'confidential',
+    updatedAt: '2026-10-01',
+    pagesCount: 5,
+    fileName: 'salary_matrix_confidential.docx',
+    fileSizeMb: 0.9,
+  },
+  {
+    id: 'DOC-HR-01',
+    title: 'Порядок предоставления основных и учебных отпусков',
+    department: 'Кадры и HR',
+    version: '2.0',
+    accessLevel: 'public',
+    updatedAt: '2026-05-12',
+    pagesCount: 8,
+    fileName: 'vacation_procedure_v2.0.pdf',
+    fileSizeMb: 1.1,
+  },
+  {
+    id: 'DOC-IT-01',
+    title: 'Инструкция по настройке двухфакторного VPN для удаленной работы',
+    department: 'IT & Разработка',
+    version: '1.5',
+    accessLevel: 'public',
+    updatedAt: '2026-07-04',
+    pagesCount: 6,
+    fileName: 'vpn_setup_guide_v1.5.md',
+    fileSizeMb: 0.4,
+  },
+];

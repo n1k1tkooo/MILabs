@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "enterprise-docs-filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/n1k1tkooo/.gemini/antigravity/scratch/ai-homeworks/hw1/docs"
+      ]
+    },
+    "pgvector-database": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres:postgres@localhost:5432/documind_db"
+      ]
+    },
+    "local-ollama-models": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-fetch",
+        "http://localhost:11434/api/tags"
+      ]
+    }
+  }
+}

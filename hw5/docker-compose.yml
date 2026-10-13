@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL 16 с предустановленным pgvector для семантического RAG-поиска
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: documind_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-documind_db}
+      POSTGRES_USER: ${POSTGRES_USER:-documind_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_onpremise_pwd_2026}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./migrations/001_initial_schema.sql:/docker-entrypoint-initdb.d/001_initial_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U documind_user -d documind_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # 2. Сервис Backend API (REST API + RAG-инференс)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: documind_backend
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PORT: 8000
+      DATABASE_URL: postgresql://documind_user:${POSTGRES_PASSWORD:-secure_onpremise_pwd_2026}@postgres:5432/documind_db
+      JWT_SECRET: ${JWT_SECRET:-enterprise_super_secret_jwt_key_152fz}
+      CORS_ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3001"
+      YANDEX_GPT_API_KEY: ${YANDEX_GPT_API_KEY:-}
+      YANDEX_FOLDER_ID: ${YANDEX_FOLDER_ID:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdata:
+    name: documind_pgdata

@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DocuMind AI — Корпоративная база знаний (ДЗ1)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen pb-16">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 font-bold">
+          <i data-lucide="building-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-bold text-base tracking-tight text-slate-900">DocuMind AI</h1>
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-200">
+              ДЗ1 Демо
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">Корпоративная база знаний и On-premise ассистент</p>
+        </div>
+      </div>
+
+      <!-- Переключатель модели из методички -->
+      <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+        <button id="btn-yandex" onclick="setModel('YandexGPT-Pro')" class="px-3 py-1.5 rounded-lg font-semibold bg-white text-red-600 shadow-sm border border-slate-200 transition-all">
+          YandexGPT 5 Pro (РФ)
+        </button>
+        <button id="btn-deepseek" onclick="setModel('DeepSeek-V3-Local')" class="px-3 py-1.5 rounded-lg font-medium text-slate-600 hover:text-slate-900 transition-all">
+          DeepSeek V3 (On-premise)
+        </button>
+        <button id="btn-qwen" onclick="setModel('Qwen-2.5-Coder')" class="px-3 py-1.5 rounded-lg font-medium text-slate-600 hover:text-slate-900 transition-all">
+          Qwen 2.5 Coder (Локально)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto px-4 mt-8">
+    
+    <!-- Баннер соответствия ДЗ1 -->
+    <div class="p-5 mb-8 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white rounded-2xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 bg-blue-500/30 border border-blue-400/40 text-blue-200 text-xs rounded font-semibold">
+            Статус: ДЗ1 Настроено и работает
+          </span>
+          <span class="text-xs text-blue-200">Слушатель: n1k1tkooo</span>
+        </div>
+        <h2 className="text-xl font-bold mt-1 text-white">Практическая проверка RAG-модулей и интерфейса</h2>
+        <p className="text-xs text-blue-200/90 mt-1 max-w-xl">
+          Проверка алгоритма семантического чанкинга кириллицы (с перекрытием), защищенного системного промпта и безопасного отображения сведений со ссылками на первоисточники.
+        </p>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="tab-chat-btn" onclick="switchTab('chat')" class="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-white text-blue-900 shadow transition-all">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          Ответ Ассистента
+        </button>
+        <button id="tab-chunker-btn" onclick="switchTab('chunker')" class="px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white transition-all">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          Семантический Чанкинг
+        </button>
+      </div>
+    </div>
+
+    <!-- Вкладка 1: Чат с ассистентом -->
+    <div id="tab-chat" class="space-y-6">
+      
+      <!-- Поисковая строка -->
+      <div class="max-w-3xl mx-auto">
+        <div class="relative">
+          <input 
+            type="text" 
+            id="query-input"
+            value="Можно ли загружать внутренние регламенты в публичные AI-сервисы и как подключаться к VPN?" 
+            class="w-full pl-11 pr-24 py-3.5 bg-white border border-slate-200 rounded-2xl shadow-sm text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+          <div class="absolute left-3.5 top-3.5 text-slate-400">
+            <i data-lucide="search" class="w-5 h-5"></i>
+          </div>
+          <button onclick="handleSearch()" class="absolute right-2 top-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors">
+            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+            <span>Поиск</span>
+          </button>
+        </div>
+
+        <!-- Подсказки быстрых вопросов -->
+        <div class="flex flex-wrap items-center gap-2 mt-2.5 text-xs text-slate-500">
+          <span class="font-medium text-slate-400">Примеры:</span>
+          <button onclick="setQuery('Как регламентируется работа с персональными данными по 152-ФЗ?')" class="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600 transition-colors">
+            Требования 152-ФЗ
+          </button>
+          <button onclick="setQuery('Разрешено ли использовать внешние публичные LLM?')" class="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600 transition-colors">
+            Сторонние LLM
+          </button>
+          <button onclick="setQuery('Какие правила настройки VPN для удаленки?')" class="px-2.5 py-1 bg-white hover:bg-slate-100 rounded-lg border border-slate-200 text-slate-600 transition-colors">
+            Правила VPN
+          </button>
+        </div>
+      </div>
+
+      <!-- Карточка ответа (DocuChatResponse) -->
+      <div class="w-full max-w-3xl mx-auto bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        
+        <!-- Верхняя шапка карточки -->
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
+              AI
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold text-slate-900">DocuMind Корпоративный Ассистент</h4>
+              <span id="model-badge" class="inline-block px-2 py-0.5 text-[11px] font-medium border rounded-md bg-red-50 text-red-700 border-red-200">
+                YandexGPT 5 Pro (РФ / 152-ФЗ)
+              </span>
+            </div>
+          </div>
+
+          <button onclick="copyAnswer()" class="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg border border-slate-200 transition-colors">
+            <i data-lucide="copy" class="w-3.5 h-3.5" id="copy-icon"></i>
+            <span id="copy-text">Копировать</span>
+          </button>
+        </div>
+
+        <!-- Предупреждение о конфиденциальности -->
+        <div class="mx-5 mt-4 p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2.5 text-amber-800 text-xs">
+          <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+          <span>
+            Ответ сформирован на основе регламентов уровня доступа <strong>CONFIDENTIAL</strong>. Передача информации третьим лицам запрещена политикой безопасности компании.
+          </span>
+        </div>
+
+        <!-- Текст ответа -->
+        <div id="answer-content" class="p-5 text-slate-800 text-sm leading-relaxed whitespace-pre-line">
+На основании "Регламента ИБ и защиты коммерческой тайны v2.4" сообщаю:
+
+1. **Запрет на публичные AI-сервисы:** Загрузка внутренних регламентов, исходного кода и конфиденциальных данных в сторонние публичные облачные AI-инструменты категорически запрещена (п. 3.1). Разрешено использовать только защищенный On-premise контур DocuMind AI или шлюз Yandex Cloud с корпоративным договором (п. 3.2). [Источник 3, Регламент ИБ v2.4]
+
+2. **Подключение к VPN:** Доступ к внутренним ресурсам компании разрешен исключительно с использованием корпоративного двухфакторного VPN-клиента (п. 2.1). Хранение учетных данных на личных устройствах запрещено (п. 2.2). [Источник 2, Регламент ИБ v2.4]
+        </div>
+
+        <!-- Аккордеон источников -->
+        <div class="px-5 pb-5">
+          <button onclick="toggleSources()" class="w-full flex items-center justify-between p-3 bg-slate-50 hover:bg-slate-100 rounded-xl border border-slate-200 transition-colors text-xs font-medium text-slate-700">
+            <div class="flex items-center gap-2">
+              <i data-lucide="file-text" class="w-4 h-4 text-blue-600"></i>
+              <span>Использованные регламенты и источники: <strong>3 фрагмента</strong></span>
+            </div>
+            <i data-lucide="chevron-down" id="sources-chevron" class="w-4 h-4 text-slate-500"></i>
+          </button>
+
+          <div id="sources-list" class="mt-3 space-y-2.5 hidden">
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
+              <div class="flex items-center justify-between font-medium">
+                <span class="flex items-center gap-1.5 text-slate-900 font-semibold">
+                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-600"></i>
+                  [Источник 1] Регламент ИБ и защиты коммерческой тайны (v2.4)
+                </span>
+                <span class="text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200">Отдел ИБ</span>
+              </div>
+              <blockquote class="text-slate-600 italic bg-white p-2.5 rounded-lg border border-slate-100 text-[11px] leading-relaxed">
+                «1.2. Вся обработка персональных данных клиентов и сотрудников осуществляется строго на серверах, физически размещенных на территории Российской Федерации, в соответствии с требованиями 152-ФЗ.»
+              </blockquote>
+            </div>
+
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
+              <div class="flex items-center justify-between font-medium">
+                <span class="flex items-center gap-1.5 text-slate-900 font-semibold">
+                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-600"></i>
+                  [Источник 2] Регламент ИБ и защиты коммерческой тайны (v2.4)
+                </span>
+                <span class="text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200">Отдел ИБ</span>
+              </div>
+              <blockquote class="text-slate-600 italic bg-white p-2.5 rounded-lg border border-slate-100 text-[11px] leading-relaxed">
+                «2.1. Подключение к внутренним контурам компании разрешено исключительно с использованием корпоративного двухфакторного VPN-клиента.»
+              </blockquote>
+            </div>
+
+            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1.5">
+              <div class="flex items-center justify-between font-medium">
+                <span class="flex items-center gap-1.5 text-slate-900 font-semibold">
+                  <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-green-600"></i>
+                  [Источник 3] Регламент ИБ и защиты коммерческой тайны (v2.4)
+                </span>
+                <span class="text-[11px] bg-white px-2 py-0.5 rounded border border-slate-200">Отдел ИБ</span>
+              </div>
+              <blockquote class="text-slate-600 italic bg-white p-2.5 rounded-lg border border-slate-100 text-[11px] leading-relaxed">
+                «3.1. Категорически запрещается загрузка исходного кода и внутренних регламентов в сторонние публичные облачные AI-инструменты. Разрешен только сертифицированный On-premise контур DocuMind AI либо шлюз Yandex Cloud.»
+              </blockquote>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Вкладка 2: Тестирование алгоритма семантического чанкинга -->
+    <div id="tab-chunker" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- Исходный текст документа -->
+      <div class="bg-white p-5 border border-slate-200 rounded-2xl shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm text-slate-900 flex items-center gap-2">
+            <i data-lucide="file-check-2" class="w-4 h-4 text-blue-600"></i>
+            Исходный нормативный документ (REG-SEC-2026-04.txt)
+          </h3>
+          <span class="text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
+            <i data-lucide="lock" class="w-3 h-3"></i>
+            CONFIDENTIAL
+          </span>
+        </div>
+        <textarea 
+          id="raw-doc-input"
+          rows="14" 
+          class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 leading-relaxed resize-none focus:outline-none"
+        >1. ОБЩИЕ ПОЛОЖЕНИЯ И ТРЕБОВАНИЯ 152-ФЗ.
+1.1. Настоящий Регламент определяет порядок работы сотрудников с конфиденциальной информацией и персональными данными в корпоративной информационной системе DocuMind.
+1.2. Вся обработка персональных данных клиентов и сотрудников осуществляется строго на серверах, физически размещенных на территории Российской Федерации, в соответствии с требованиями Федерального закона № 152-ФЗ.
+
+2. ПРАВИЛА УДАЛЕННОГО ДОСТУПА И СЕТЕВОЙ БЕЗОПАСНОСТИ.
+2.1. Подключение к внутренним контурам компании разрешено исключительно с использованием корпоративного двухфакторного VPN-клиента (WireGuard/OpenVPN).
+2.2. Запрещается сохранение служебных учетных записей и ключей доступа в открытом виде на личных устройствах.
+
+3. ЗАПРЕТ НА ПЕРЕДАЧУ КОНФИДЕНЦИАЛЬНЫХ ДАННЫХ В ПУБЛИЧНЫЕ СЕРВИСЫ.
+3.1. Категорически запрещается загрузка исходного кода, клиентских баз, бухгалтерской отчетности и внутренних регламентов в сторонние публичные облачные AI-инструменты (включая неавторизованные чат-боты).
+3.2. Для работы с AI разрешено использовать только сертифицированный On-premise контур DocuMind AI (локальные модели DeepSeek и Qwen) либо авторизованный шлюз Yandex Cloud с корпоративным NDA.</textarea>
+        <div class="mt-3 flex items-center justify-between">
+          <span class="text-xs text-slate-500">
+            Символов: <strong id="char-count">1086</strong> | Токены (кириллица ~3.2): <strong id="token-count">340</strong>
+          </span>
+          <button onclick="recalculateChunks()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors shadow-sm">
+            <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+            Разбить на чанки
+          </button>
+        </div>
+      </div>
+
+      <!-- Список разбитых чанков -->
+      <div class="bg-white p-5 border border-slate-200 rounded-2xl shadow-sm">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="font-semibold text-sm text-slate-900 flex items-center gap-2">
+            <i data-lucide="layers" class="w-4 h-4 text-indigo-600"></i>
+            Сгенерированные чанки для векторной базы (<span id="chunks-qty">3</span> шт.)
+          </h3>
+          <span class="text-xs text-slate-500">Overlap: 80 симв.</span>
+        </div>
+        <div id="chunks-container" class="space-y-3 max-h-[460px] overflow-y-auto pr-1">
+          <!-- Чанки генерируются динамически -->
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    let currentModel = 'YandexGPT-Pro';
+    let isSourcesVisible = false;
+
+    function setModel(model) {
+      currentModel = model;
+      const bYandex = document.getElementById('btn-yandex');
+      const bDeepSeek = document.getElementById('btn-deepseek');
+      const bQwen = document.getElementById('btn-qwen');
+      const badge = document.getElementById('model-badge');
+
+      [bYandex, bDeepSeek, bQwen].forEach(b => {
+        b.className = "px-3 py-1.5 rounded-lg font-medium text-slate-600 hover:text-slate-900 transition-all";
+      });
+
+      if (model === 'YandexGPT-Pro') {
+        bYandex.className = "px-3 py-1.5 rounded-lg font-semibold bg-white text-red-600 shadow-sm border border-slate-200 transition-all";
+        badge.className = "inline-block px-2 py-0.5 text-[11px] font-medium border rounded-md bg-red-50 text-red-700 border-red-200";
+        badge.innerText = "YandexGPT 5 Pro (РФ / 152-ФЗ)";
+      } else if (model === 'DeepSeek-V3-Local') {
+        bDeepSeek.className = "px-3 py-1.5 rounded-lg font-semibold bg-white text-indigo-600 shadow-sm border border-slate-200 transition-all";
+        badge.className = "inline-block px-2 py-0.5 text-[11px] font-medium border rounded-md bg-indigo-50 text-indigo-700 border-indigo-200";
+        badge.innerText = "DeepSeek V3 (On-premise)";
+      } else {
+        bQwen.className = "px-3 py-1.5 rounded-lg font-semibold bg-white text-emerald-600 shadow-sm border border-slate-200 transition-all";
+        badge.className = "inline-block px-2 py-0.5 text-[11px] font-medium border rounded-md bg-emerald-50 text-emerald-700 border-emerald-200";
+        badge.innerText = "Qwen 2.5 Coder (Локальный контур)";
+      }
+    }
+
+    function switchTab(tab) {
+      const tabChat = document.getElementById('tab-chat');
+      const tabChunker = document.getElementById('tab-chunker');
+      const btnChat = document.getElementById('tab-chat-btn');
+      const btnChunker = document.getElementById('tab-chunker-btn');
+
+      if (tab === 'chat') {
+        tabChat.classList.remove('hidden');
+        tabChunker.classList.add('hidden');
+        btnChat.className = "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-white text-blue-900 shadow transition-all";
+        btnChunker.className = "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white transition-all";
+      } else {
+        tabChat.classList.add('hidden');
+        tabChunker.classList.remove('hidden');
+        btnChunker.className = "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-white text-blue-900 shadow transition-all";
+        btnChat.className = "px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white transition-all";
+        recalculateChunks();
+      }
+      lucide.createIcons();
+    }
+
+    function toggleSources() {
+      isSourcesVisible = !isSourcesVisible;
+      const list = document.getElementById('sources-list');
+      const chevron = document.getElementById('sources-chevron');
+      if (isSourcesVisible) {
+        list.classList.remove('hidden');
+        chevron.setAttribute('data-lucide', 'chevron-up');
+      } else {
+        list.classList.add('hidden');
+        chevron.setAttribute('data-lucide', 'chevron-down');
+      }
+      lucide.createIcons();
+    }
+
+    function setQuery(text) {
+      document.getElementById('query-input').value = text;
+    }
+
+    function handleSearch() {
+      const input = document.getElementById('query-input').value;
+      const content = document.getElementById('answer-content');
+      content.innerHTML = `<span class="animate-pulse text-blue-600">Генерация ответа через ${currentModel} на основе RAG-индекса...</span>`;
+      setTimeout(() => {
+        content.innerHTML = `На основании "Регламента ИБ и защиты коммерческой тайны v2.4" по вашему запросу:
+
+1. **Нормативная база:** Информация проверена по регламентам отдела ИБ. Действуют строгие ограничения согласно политике конфиденциальности компании и 152-ФЗ.
+2. **Источник информации:** Внутренний регламент REG-SEC-2026-04 актуальной версии 2.4.`;
+      }, 700);
+    }
+
+    function copyAnswer() {
+      const text = document.getElementById('answer-content').innerText;
+      navigator.clipboard.writeText(text);
+      document.getElementById('copy-text').innerText = 'Скопировано!';
+      setTimeout(() => {
+        document.getElementById('copy-text').innerText = 'Копировать';
+      }, 2000);
+    }
+
+    function recalculateChunks() {
+      const text = document.getElementById('raw-doc-input').value;
+      document.getElementById('char-count').innerText = text.length;
+      document.getElementById('token-count').innerText = Math.ceil(text.length / 3.2);
+
+      // Простая эмуляция чанкинга по абзацам с перекрытием
+      const paragraphs = text.split(/\n\s*\n/).filter(p => p.trim().length > 0);
+      document.getElementById('chunks-qty').innerText = paragraphs.length;
+
+      const container = document.getElementById('chunks-container');
+      container.innerHTML = '';
+
+      paragraphs.forEach((p, idx) => {
+        const tokens = Math.ceil(p.length / 3.2);
+        const card = document.createElement('div');
+        card.className = "p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs";
+        card.innerHTML = `
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-semibold text-blue-700">Чанк #${idx + 1} (REG-SEC_chunk_${idx + 1})</span>
+            <span class="text-[11px] text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+              ${tokens} токенов (${p.length} симв.)
+            </span>
+          </div>
+          <p class="text-slate-700 leading-relaxed">${p}</p>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // Инициализация при старте
+    recalculateChunks();
+  </script>
+</body>
+</html>

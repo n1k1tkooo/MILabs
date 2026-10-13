@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: documind-postgres-hw6
+    restart: always
+    environment:
+      POSTGRES_DB: documind_prod
+      POSTGRES_USER: documind_admin
+      POSTGRES_PASSWORD: SecretEnterprisePassword152FZ!
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U documind_admin -d documind_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: documind-app-hw6
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: 8000
+      APP_ENV: production
+      YANDEX_CLIENT_ID: documind_yandex_app_prod_9918
+      YANDEX_CLIENT_SECRET: sec_yndx_secret_mock_152fz
+      YANDEX_METRIKA_COUNTER_ID: 98765432
+      YOOKASSA_SHOP_ID: 412095
+      DATABASE_URL: postgresql://documind_admin:SecretEnterprisePassword152FZ!@db:5432/documind_prod
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
