@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DocuMind AI — Корпоративная база знаний (ДЗ 6: CI/CD & Интеграции)</title>
+  <title>DocuMind AI Enterprise — Корпоративная база знаний (RAG & 152-ФЗ)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Яндекс.Метрика: Шаг 4 (Счетчик № 98765432) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Яндекс.Метрика (Счетчик № 98765432) с деперсонализацией IP по 152-ФЗ -->
   <script type="text/javascript">
     (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
     m[i].l=1*new Date();
@@ -14,7 +15,6 @@
     k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
     (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
 
-    // Инициализация счетчика Яндекс.Метрики с деперсонализацией IP по 152-ФЗ РФ
     ym(98765432, "init", {
         clickmap: true,
         trackLinks: true,
@@ -25,80 +25,96 @@
   </script>
   <noscript><div><img src="https://mc.yandex.ru/watch/98765432" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    .highlight-cite { background-color: #fef08a; padding: 2px 4px; border-radius: 4px; border-left: 3px solid #eab308; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 h-screen overflow-hidden antialiased flex flex-col">
 
-  <!-- Верхняя навигационная панель -->
-  <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-10">
+  <!-- ========================================================================= -->
+  <!-- ВЕРХНЯЯ ШАПКА СИСТЕМЫ (HEADER) -->
+  <!-- ========================================================================= -->
+  <header class="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 z-20 shadow-sm">
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 text-white flex items-center justify-center font-bold shadow-md shadow-blue-500/20">
         <i data-lucide="shield-check" class="w-6 h-6"></i>
       </div>
       <div>
         <div class="flex items-center gap-2">
-          <h1 class="font-bold text-sm text-slate-900">DocuMind AI Enterprise</h1>
-          <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full">
-            CI/CD Deployed
+          <h1 class="font-bold text-sm tracking-tight text-slate-900">DocuMind AI Enterprise</h1>
+          <span class="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            CI/CD Passing
           </span>
           <span class="text-[10px] bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2 py-0.5 rounded-full">
-            152-ФЗ РФ
+            152-ФЗ On-Premise
           </span>
         </div>
-        <p class="text-[11px] text-slate-500">Регламенты предприятия • Yandex ID • Метрика • ЮKassa</p>
+        <p class="text-[11px] text-slate-500">Корпоративный RAG-ассистент • PostgreSQL pgvector • YandexGPT & DeepSeek</p>
       </div>
     </div>
 
-    <!-- Мониторинг & Авторизация -->
+    <!-- Мониторинг & Статус -->
     <div class="flex items-center gap-3">
-      <div class="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span class="text-slate-600 font-medium">UptimeRobot: <b class="text-emerald-700">99.98%</b></span>
+      <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+        <span class="text-slate-500">Uptime:</span>
+        <span class="font-bold text-emerald-700">99.98%</span>
         <span class="text-slate-300">|</span>
-        <span class="text-slate-600">Health: <b class="text-blue-700">200 OK</b></span>
+        <span class="text-slate-500">Векторы:</span>
+        <span id="header-chunks-count" class="font-bold text-blue-700">24 чанка</span>
       </div>
 
-      <!-- Профиль / OAuth2 -->
-      <div id="auth-panel" class="flex items-center gap-2">
-        <button onclick="loginOAuth('yandex')" class="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-semibold transition">
-          <span class="w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] font-bold">Я</span>
-          <span>Войти с Yandex ID</span>
-        </button>
-        <button onclick="loginOAuth('google')" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">
-          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
-          <span>Google SSO</span>
-        </button>
+      <!-- Переключатель роли пользователя -->
+      <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl text-xs">
+        <span class="text-slate-500 text-[11px] pl-2 font-medium">Роль:</span>
+        <select id="user-role-select" onchange="changeRole()" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <option value="user">User (Инженер)</option>
+          <option value="manager">Manager (HR)</option>
+          <option value="security_officer" selected>Security Officer (ИБ)</option>
+          <option value="admin">Admin (Администратор)</option>
+        </select>
       </div>
+
+      <!-- Кнопка настроек RAG -->
+      <button onclick="toggleRagSettingsModal()" class="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition" title="Параметры RAG-поиска">
+        <i data-lucide="sliders" class="w-4 h-4"></i>
+        <span class="hidden sm:inline">RAG Настройки</span>
+      </button>
     </div>
   </header>
 
-  <!-- Главная область: Сайдбар + Контент -->
+  <!-- ========================================================================= -->
+  <!-- ОСНОВНАЯ РАБОЧАЯ ОБЛАСТЬ (САЙДБАР + КОНТЕНТ) -->
+  <!-- ========================================================================= -->
   <div class="flex flex-1 overflow-hidden">
-    <!-- Боковое меню -->
+    <!-- Боковое меню навигации -->
     <aside class="w-64 bg-white border-r border-slate-200 flex flex-col justify-between p-4 shrink-0">
       <div class="space-y-4">
-        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">Разделы системы</div>
+        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-2">Модули платформы</div>
         <nav class="space-y-1">
           <button id="nav-chat" onclick="switchTab('chat')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 shadow-sm transition">
             <i data-lucide="message-square" class="w-4 h-4"></i>
-            <span>RAG-Чат (YandexGPT)</span>
+            <span>RAG-Чат с ассистентом</span>
           </button>
           <button id="nav-docs" onclick="switchTab('docs')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
             <i data-lucide="file-text" class="w-4 h-4"></i>
-            <span>База регламентов (pgvector)</span>
+            <span>Реестр регламентов (БД)</span>
           </button>
           <button id="nav-oauth" onclick="switchTab('oauth')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
             <i data-lucide="key-round" class="w-4 h-4"></i>
-            <span>OAuth2 / Yandex ID</span>
+            <span>OAuth2 & Yandex ID (SSO)</span>
           </button>
           <button id="nav-analytics" onclick="switchTab('analytics')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
             <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
-            <span>Яндекс.Метрика (События)</span>
+            <span>Яндекс.Метрика & Дашборд</span>
           </button>
           <button id="nav-billing" onclick="switchTab('billing')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
             <i data-lucide="credit-card" class="w-4 h-4"></i>
-            <span>ЮKassa / Подписка</span>
+            <span>ЮKassa / Тарифы</span>
           </button>
           <button id="nav-monitoring" onclick="switchTab('monitoring')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
             <i data-lucide="activity" class="w-4 h-4"></i>
@@ -107,104 +123,146 @@
         </nav>
       </div>
 
-      <!-- Роль пользователя и RBAC -->
+      <!-- Информационный блок статуса контура -->
       <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-xs">
         <div class="flex items-center justify-between text-slate-700">
-          <span class="font-bold">Роль в системе:</span>
-          <select id="role-selector" onchange="changeRole()" class="bg-white border border-slate-200 rounded px-1.5 py-0.5 font-semibold text-xs text-blue-700">
-            <option value="user">User (Сотрудник)</option>
-            <option value="manager">Manager (HR)</option>
-            <option value="security_officer" selected>Security Officer (ИБ)</option>
-            <option value="admin">Admin</option>
-          </select>
+          <span class="font-bold flex items-center gap-1.5">
+            <i data-lucide="database" class="w-3.5 h-3.5 text-blue-600"></i> pgvector DB:
+          </span>
+          <span class="text-emerald-700 font-bold">READY</span>
         </div>
-        <p class="text-[10px] text-slate-400">Ролевая изоляция контента по 152-ФЗ активна.</p>
+        <p class="text-[11px] text-slate-500">
+          Изоляция строк (RLS) активна. Доступ к коммерческой тайне фильтруется согласно ст. 183 УК РФ и 152-ФЗ.
+        </p>
       </div>
     </aside>
 
-    <!-- Основной контейнер вкладок -->
-    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50">
+    <!-- Основной контейнер содержимого -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
 
-      <!-- ================================================================= -->
-      <!-- ВКЛАДКА 1: RAG-ЧАТ -->
-      <!-- ================================================================= -->
+      <!-- ===================================================================== -->
+      <!-- ВКЛАДКА 1: RAG-ЧАТ С АССИСТЕНТОМ -->
+      <!-- ===================================================================== -->
       <section id="view-chat" class="flex-1 flex flex-col h-full overflow-hidden">
-        <div class="h-12 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0">
-          <div class="flex items-center gap-2 text-xs">
-            <span class="text-slate-500">Модель:</span>
-            <span class="font-semibold text-slate-800 bg-slate-100 px-2 py-0.5 rounded">YandexGPT-Pro / On-premise</span>
+        <!-- Полоса состояния диалога -->
+        <div class="h-11 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="text-slate-500">Активная модель:</span>
+            <span id="active-model-badge" class="font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-md">
+              YandexGPT-Pro / Hybrid RAG
+            </span>
             <span class="text-slate-300">•</span>
-            <span class="text-slate-500">База знаний:</span>
-            <span class="font-semibold text-emerald-700">PostgreSQL pgvector (5 регламентов)</span>
+            <span class="text-slate-500">Параметры:</span>
+            <span id="active-rag-params" class="text-slate-600 font-mono text-[11px]">Top-K: 3 | Порог: 0.08</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="exportChatMarkdown()" class="text-slate-600 hover:text-slate-900 font-semibold flex items-center gap-1 text-[11px] bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i> Экспорт диалога (.md)
+            </button>
+            <button onclick="clearChat()" class="text-slate-400 hover:text-red-600 text-[11px] font-semibold flex items-center gap-1 px-2 py-1 transition" title="Очистить диалог">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Очистить
+            </button>
           </div>
         </div>
 
+        <!-- Лента сообщений -->
         <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-4">
+          <!-- Стартовое приветствие -->
           <div class="max-w-3xl mr-auto w-full">
-            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2">
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
               <div class="flex items-center justify-between">
                 <span class="text-xs font-bold text-blue-600 flex items-center gap-1.5">
                   <i data-lucide="bot" class="w-4 h-4"></i> DocuMind RAG Assistant
                 </span>
-                <span class="text-[10px] text-slate-400">Готов к поиску</span>
+                <span class="text-[10px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md font-semibold">
+                  152-ФЗ Verified
+                </span>
               </div>
-              <p class="text-slate-700 text-sm">
-                Здравствуйте! Я корпоративный ассистент DocuMind AI. Все ответы строятся строго по утвержденным нормативным документам компании без передачи сведений третьим лицам.
+              <p class="text-slate-700 text-sm leading-relaxed">
+                Здравствуйте! Я корпоративный ассистент DocuMind AI. Я провожу семантический поиск по нормативным регламентам, приказам и должностным инструкциям компании, цитируя первоисточники.
               </p>
-              <div class="flex flex-wrap gap-2 pt-2">
-                <button onclick="quickPrompt('Как настроить VPN для удаленной работы?')" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 transition">
-                  🔑 Настройка VPN
-                </button>
-                <button onclick="quickPrompt('Каковы требования к сложности паролей?')" class="text-xs bg-slate-50 hover:bg-slate-100 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 transition">
-                  🛡️ Требования к паролям
-                </button>
-                <button onclick="quickPrompt('Сколько зарабатывает директор компании?')" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-xl border border-red-200 transition">
-                  ⚠️ Тест 152-ФЗ (Коммерческая тайна)
-                </button>
+              <div class="border-t border-slate-100 pt-3">
+                <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Быстрые сценарии проверки для защиты:</div>
+                <div class="flex flex-wrap gap-2">
+                  <button onclick="quickPrompt('Как настроить VPN для удаленной работы?')" class="text-xs bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 transition">
+                    🔑 Настройка VPN (IT-01)
+                  </button>
+                  <button onclick="quickPrompt('Каковы требования к сложности паролей и сроку смены?')" class="text-xs bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 transition">
+                    🛡️ Сложность паролей (SEC-01)
+                  </button>
+                  <button onclick="quickPrompt('Как оформляется учебный отпуск для студента вуза?')" class="text-xs bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 transition">
+                    🎓 Учебный отпуск (HR-01)
+                  </button>
+                  <button onclick="quickPrompt('Какие суточные выплачиваются при командировке в Москву?')" class="text-xs bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 transition">
+                    ✈️ Суточные в командировке (HR-02)
+                  </button>
+                  <button onclick="quickPrompt('Какая зарплата у генерального директора компании?')" class="text-xs bg-red-50 hover:bg-red-100 text-red-700 px-3 py-1.5 rounded-xl border border-red-200 font-semibold transition">
+                    ⚠️ Тест 152-ФЗ (Зарплаты топ-менеджмента)
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- Поле ввода запроса -->
         <div class="bg-white border-t border-slate-200 p-4 shrink-0">
-          <form onsubmit="handleChatSubmit(event)" class="max-w-3xl mx-auto relative">
+          <form onsubmit="handleChatSubmit(event)" class="max-w-3xl mx-auto relative flex items-center">
             <input 
               type="text" 
               id="chat-input"
-              value="Как настроить VPN для удаленной работы?"
-              class="w-full pl-4 pr-24 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Задайте вопрос по корпоративным регламентам или загруженным документам..."
+              class="w-full pl-4 pr-28 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition"
             >
-            <button type="submit" class="absolute right-2 top-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
+            <button type="submit" class="absolute right-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
               <i data-lucide="send" class="w-3.5 h-3.5"></i>
-              <span>Спросить</span>
+              <span>Запрос</span>
             </button>
           </form>
         </div>
       </section>
 
-      <!-- ================================================================= -->
-      <!-- ВКЛАДКА 2: БАЗА РЕГЛАМЕНТОВ -->
-      <!-- ================================================================= -->
+      <!-- ===================================================================== -->
+      <!-- ВКЛАДКА 2: РЕЕСТР ДОКУМЕНТОВ (БАЗА ЗНАНИЙ) -->
+      <!-- ===================================================================== -->
       <section id="view-docs" class="flex-1 flex flex-col h-full overflow-hidden hidden p-6">
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
           <div>
-            <h2 class="text-base font-bold text-slate-900">Реестр нормативных документов (PostgreSQL 16)</h2>
-            <p class="text-xs text-slate-500">Документы проиндексированы в pgvector с HNSW-индексом</p>
+            <h2 class="text-base font-bold text-slate-900">Реестр нормативных документов (PostgreSQL 16 pgvector)</h2>
+            <p class="text-xs text-slate-500">Документы проиндексированы, разбиты на семантические фрагменты и защищены политиками RLS</p>
           </div>
-          <button onclick="loadDocuments()" class="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-sm">
-            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Обновить из БД
-          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="openUploadModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+              <i data-lucide="upload" class="w-3.5 h-3.5"></i> Загрузить документ
+            </button>
+            <button onclick="openChunkInspectorModal()" class="px-3.5 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
+              <i data-lucide="binary" class="w-3.5 h-3.5"></i> Инспектор чанков
+            </button>
+            <button onclick="loadDocuments()" class="p-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl transition" title="Обновить список">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
-        <div id="docs-list" class="space-y-3 overflow-y-auto pr-1"></div>
+
+        <!-- Фильтры -->
+        <div class="flex flex-wrap items-center gap-2 mb-4">
+          <button onclick="filterDocs('all')" class="px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold doc-filter-btn" data-dept="all">Все</button>
+          <button onclick="filterDocs('Информационная Безопасность')" class="px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-xs font-semibold doc-filter-btn" data-dept="Информационная Безопасность">Информационная Безопасность</button>
+          <button onclick="filterDocs('Кадры и HR')" class="px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-xs font-semibold doc-filter-btn" data-dept="Кадры и HR">Кадры и HR</button>
+          <button onclick="filterDocs('IT & Разработка')" class="px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-xs font-semibold doc-filter-btn" data-dept="IT & Разработка">IT & Разработка</button>
+        </div>
+
+        <!-- Список документов -->
+        <div id="docs-list" class="space-y-3 overflow-y-auto pr-1 flex-1"></div>
       </section>
 
-      <!-- ================================================================= -->
-      <!-- ВКЛАДКА 3: OAUTH2 & YANDEX ID (Шаг 3) -->
-      <!-- ================================================================= -->
+      <!-- ===================================================================== -->
+      <!-- ВКЛАДКА 3: OAUTH2 / SSO ЦЕНТР -->
+      <!-- ===================================================================== -->
       <section id="view-oauth" class="flex-1 flex flex-col h-full overflow-y-auto hidden p-6 space-y-6">
         <div>
           <h2 class="text-base font-bold text-slate-900">Интеграция OAuth2: Yandex ID & Google Workspace</h2>
-          <p class="text-xs text-slate-500">Единая точка входа (SSO) для корпоративных сотрудников с привязкой ролей RBAC</p>
+          <p class="text-xs text-slate-500">Единая корпоративная точка входа (SSO) с привязкой ролевой модели (RBAC)</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -212,24 +270,25 @@
           <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
-                <span class="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm">Я</span>
+                <span class="w-9 h-9 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-sm shadow-sm">Я</span>
                 <div>
                   <h3 class="text-sm font-bold text-slate-900">Яндекс ID (Основной провайдер РФ)</h3>
                   <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold border border-emerald-200">
-                    Соответствие 152-ФЗ
+                    Соответствие 152-ФЗ РФ
                   </span>
                 </div>
               </div>
               <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">Client ID: documind-app-prod</span>
             </div>
-            <p class="text-xs text-slate-600">
-              Позволяет авторизовать сотрудников с корпоративными аккаунтами Яндекс 360 с автоматической выдачей доступов к секретным приказам.
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Авторизация сотрудников через корпоративный Яндекс 360 с автоматической выдачей роли и защитой от CSRF через криптографический параметр <code>state nonce</code>.
             </p>
             <div class="p-3 bg-slate-50 rounded-xl text-xs font-mono text-slate-600 space-y-1">
               <div><b>Redirect URI:</b> http://localhost:8000/api/auth/yandex/callback</div>
               <div><b>Scopes:</b> login:email, login:info, login:avatar</div>
             </div>
             <button onclick="loginOAuth('yandex')" class="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+              <i data-lucide="log-in" class="w-4 h-4"></i>
               <span>Авторизоваться через Яндекс ID</span>
             </button>
           </div>
@@ -238,7 +297,7 @@
           <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
             <div class="flex items-center justify-between">
               <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                <div class="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-sm">
                   <i data-lucide="globe" class="w-4 h-4"></i>
                 </div>
                 <div>
@@ -250,89 +309,114 @@
               </div>
               <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-600">Client ID: documind-gcloud</span>
             </div>
-            <p class="text-xs text-slate-600">
-              Интеграция с корпоративным доменом Google Workspace для международных офисов компании.
+            <p class="text-xs text-slate-600 leading-relaxed">
+              Интеграция с корпоративным доменом Google Workspace для филиалов компании.
             </p>
             <div class="p-3 bg-slate-50 rounded-xl text-xs font-mono text-slate-600 space-y-1">
               <div><b>Redirect URI:</b> http://localhost:8000/api/auth/google/callback</div>
               <div><b>Scopes:</b> openid, email, profile</div>
             </div>
             <button onclick="loginOAuth('google')" class="w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition">
+              <i data-lucide="log-in" class="w-4 h-4"></i>
               <span>Авторизоваться через Google SSO</span>
             </button>
           </div>
         </div>
 
-        <!-- Текущая активная сессия -->
+        <!-- Текущая сессия -->
         <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
-          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Текущее состояние OAuth2 сессии</h3>
-          <div id="oauth-session-view" class="text-xs text-slate-600 font-mono bg-slate-50 p-4 rounded-xl border border-slate-100">
-            { "authenticated": false, "state": "Гостевой режим (User)", "token": null }
-          </div>
+          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Текущее состояние OAuth2 сессии и токены</h3>
+          <pre id="oauth-session-view" class="text-xs text-slate-700 font-mono bg-slate-50 p-4 rounded-xl border border-slate-100 overflow-x-auto leading-relaxed">
+{ "authenticated": false, "active_role": "security_officer", "token": null }
+          </pre>
         </div>
       </section>
 
-      <!-- ================================================================= -->
-      <!-- ВКЛАДКА 4: ЯНДЕКС.МЕТРИКА (Шаг 4) -->
-      <!-- ================================================================= -->
+      <!-- ===================================================================== -->
+      <!-- ВКЛАДКА 4: ЯНДЕКС.МЕТРИКА & АНАЛИТИЧЕСКИЙ ДАШБОРД -->
+      <!-- ===================================================================== -->
       <section id="view-analytics" class="flex-1 flex flex-col h-full overflow-y-auto hidden p-6 space-y-6">
-        <div>
-          <h2 class="text-base font-bold text-slate-900">Интеграция веб-аналитики: Яндекс.Метрика</h2>
-          <p class="text-xs text-slate-500">Счетчик № 98765432 с включенным Вебвизором и сквозным отслеживанием целей</p>
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-bold text-slate-900">Веб-аналитика: Яндекс.Метрика & Мониторинг поиска</h2>
+            <p class="text-xs text-slate-500">Счетчик № 98765432 • Интерактивные графики Chart.js • Деперсонализация по 152-ФЗ</p>
+          </div>
+          <button onclick="refreshAnalytics()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl text-xs font-semibold text-slate-700 flex items-center gap-1.5 shadow-sm">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Обновить метрики
+          </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Карточки KPI -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
-            <span class="text-xs text-slate-500">Статус счетчика</span>
-            <div class="text-base font-bold text-emerald-600 flex items-center gap-1.5">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Активен в коде
+            <span class="text-xs text-slate-500">Всего запросов RAG</span>
+            <div id="metric-total-queries" class="text-xl font-bold text-blue-600">18</div>
+            <p class="text-[11px] text-slate-400">Счетчик Метрики активен</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+            <span class="text-xs text-slate-500">Заблокировано 152-ФЗ</span>
+            <div id="metric-blocked-queries" class="text-xl font-bold text-red-600">3</div>
+            <p class="text-[11px] text-red-400">Перехват утечек коммерч. тайны</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+            <span class="text-xs text-slate-500">Средняя задержка поиска</span>
+            <div id="metric-avg-latency" class="text-xl font-bold text-emerald-600">13.2 мс</div>
+            <p class="text-[11px] text-slate-400">HNSW Cosine Engine</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+            <span class="text-xs text-slate-500">Комплаенс 152-ФЗ</span>
+            <div class="text-xl font-bold text-purple-600">100%</div>
+            <p class="text-[11px] text-purple-400">IP маскирован (xxx.xxx)</p>
+          </div>
+        </div>
+
+        <!-- Графики Chart.js -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Распределение документов по отделам</h3>
+            <div class="h-56 relative flex items-center justify-center">
+              <canvas id="deptChart"></canvas>
             </div>
-            <p class="text-[11px] text-slate-400">ID: 98765432 (On-premise Proxy)</p>
           </div>
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
-            <span class="text-xs text-slate-500">Отправлено событий</span>
-            <div id="analytics-event-count" class="text-base font-bold text-blue-600">3 события</div>
-            <p class="text-[11px] text-slate-400">Вебвизор 2.0 включен</p>
-          </div>
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
-            <span class="text-xs text-slate-500">Защита 152-ФЗ</span>
-            <div class="text-base font-bold text-purple-600">IP Маскирован</div>
-            <p class="text-[11px] text-slate-400">PII данные не передаются</p>
+          <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+            <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Соотношение запросов: Одобрено vs 152-ФЗ</h3>
+            <div class="h-56 relative flex items-center justify-center">
+              <canvas id="securityChart"></canvas>
+            </div>
           </div>
         </div>
 
-        <!-- Тестирование отправки целей -->
+        <!-- Тестирование целей Метрики -->
         <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-4 shadow-sm">
-          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Тестирование целей Яндекс.Метрики (JavaScript ym(...))</h3>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-            <button onclick="triggerMetrikaGoal('SEARCH_QUERY')" class="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs space-y-1 transition">
+          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Тестирование целей Яндекс.Метрики в реальном времени</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button onclick="triggerMetrikaGoal('SEARCH_QUERY_SENT', { test: true })" class="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs space-y-1 transition">
               <div class="font-bold text-slate-800">Цель: SEARCH_QUERY</div>
               <div class="text-[11px] text-slate-500">Отправка поискового запроса</div>
             </button>
-            <button onclick="triggerMetrikaGoal('DOC_DOWNLOAD')" class="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs space-y-1 transition">
+            <button onclick="triggerMetrikaGoal('DOC_DOWNLOAD', { test: true })" class="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-left text-xs space-y-1 transition">
               <div class="font-bold text-slate-800">Цель: DOC_DOWNLOAD</div>
               <div class="text-[11px] text-slate-500">Скачивание регламента PDF</div>
             </button>
-            <button onclick="triggerMetrikaGoal('RBAC_SECURITY_VIOLATION')" class="p-3 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-left text-xs space-y-1 transition">
+            <button onclick="triggerMetrikaGoal('RBAC_SECURITY_VIOLATION', { test: true })" class="p-3 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl text-left text-xs space-y-1 transition">
               <div class="font-bold text-red-800">Цель: RBAC_VIOLATION</div>
               <div class="text-[11px] text-red-600">Попытка несанкционированного доступа</div>
             </button>
           </div>
 
-          <div class="text-xs font-mono bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1" id="analytics-log">
-            <span class="text-slate-400">// Лог событий аналитики:</span>
-            <div class="text-slate-700">ym(98765432, 'reachGoal', 'PAGE_VIEW_INIT');</div>
+          <div class="text-xs font-mono bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1 max-h-36 overflow-y-auto" id="analytics-log">
+            <span class="text-slate-400">// Живой лог отправки целей (ym.reachGoal):</span>
           </div>
         </div>
       </section>
 
-      <!-- ================================================================= -->
-      <!-- ВКЛАДКА 5: ЮKASSA & ПЛАТЕЖИ (Шаг 5) -->
-      <!-- ================================================================= -->
+      <!-- ===================================================================== -->
+      <!-- ВКЛАДКА 5: ЮKASSA & ТАРИФЫ -->
+      <!-- ===================================================================== -->
       <section id="view-billing" class="flex-1 flex flex-col h-full overflow-y-auto hidden p-6 space-y-6">
         <div>
           <h2 class="text-base font-bold text-slate-900">Интеграция платежной системы: ЮKassa</h2>
-          <p class="text-xs text-slate-500">Обработка лицензионных платежей Enterprise On-Premise через API и Webhooks</p>
+          <p class="text-xs text-slate-500">Оплата корпоративных лицензий Enterprise On-Premise через API и Webhooks</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -343,58 +427,59 @@
             </div>
             <h3 class="text-base font-bold text-slate-900">DocuMind Enterprise On-Premise</h3>
             <ul class="text-xs text-slate-600 space-y-2">
-              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Развертывание в закрытом контуре компании</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Развертывание в закрытом контуре компании (Docker / VPS)</li>
               <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Векторная база данных PostgreSQL 16 + pgvector</li>
-              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Полное соответствие требованиям 152-ФЗ РФ</li>
-              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Поддержка YandexGPT Pro и DeepSeek-V3</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Полное соответствие требованиям 152-ФЗ РФ и ГОСТ шифрование</li>
+              <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Поддержка YandexGPT Pro и локальных моделей DeepSeek</li>
             </ul>
-            <button onclick="createYookassaInvoice()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition">
-              💳 Оплатить счет через ЮKassa
+            <button onclick="createYookassaInvoice()" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
+              <i data-lucide="credit-card" class="w-4 h-4"></i>
+              <span>Сформировать счет в ЮKassa</span>
             </button>
           </div>
 
           <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-            <h3 class="text-sm font-bold text-slate-900">Симуляция Webhook от ЮKassa</h3>
-            <p class="text-xs text-slate-500">
-              Эмулирует входящее асинхронное уведомление <code>payment.succeeded</code> от шлюза ЮKassa на <code>POST /api/billing/webhook</code>:
+            <h3 class="text-sm font-bold text-slate-900">Симуляция Webhook уведомления ЮKassa</h3>
+            <p class="text-xs text-slate-500 leading-relaxed">
+              Эмулирует входящее асинхронное уведомление <code>payment.succeeded</code> со сверкой цифровой подписи HMAC-SHA256:
             </p>
             <button onclick="simulateYookassaWebhook()" class="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition">
               <i data-lucide="zap" class="w-4 h-4 text-amber-500"></i>
               <span>Эмулировать вебхук payment.succeeded</span>
             </button>
-            <div id="billing-result" class="text-xs font-mono bg-slate-50 p-3 rounded-xl border border-slate-100 text-slate-600">
-              Ожидание действия...
+            <div id="billing-result" class="text-xs font-mono bg-slate-50 p-4 rounded-xl border border-slate-100 text-slate-600 leading-relaxed min-h-24">
+              Ожидание формирования счета или входящего уведомления...
             </div>
           </div>
         </div>
       </section>
 
-      <!-- ================================================================= -->
-      <!-- ВКЛАДКА 6: МОНИТОРИНГ & CI/CD (Шаг 1, 6, 7) -->
-      <!-- ================================================================= -->
+      <!-- ===================================================================== -->
+      <!-- ВКЛАДКА 6: МОНИТОРИНГ & CI/CD -->
+      <!-- ===================================================================== -->
       <section id="view-monitoring" class="flex-1 flex flex-col h-full overflow-y-auto hidden p-6 space-y-6">
         <div>
           <h2 class="text-base font-bold text-slate-900">Мониторинг инфраструктуры, Логирование & CI/CD</h2>
-          <p class="text-xs text-slate-500">Health Check, аудит событий безопасности и статус GitHub Actions</p>
+          <p class="text-xs text-slate-500">Health Check эндпоинт для UptimeRobot, журнал аудита и статус сборки GitHub Actions</p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
             <span class="text-xs text-slate-500">GitHub Actions CI/CD</span>
             <div class="text-sm font-bold text-emerald-600 flex items-center gap-1.5">
-              <i data-lucide="check-circle" class="w-4 h-4"></i> Pipeline Passing (#42)
+              <i data-lucide="check-circle-2" class="w-4 h-4"></i> Pipeline Passing (#2)
             </div>
-            <p class="text-[11px] text-slate-400">Lint, Pytest, Bandit, Docker Build</p>
+            <p class="text-[11px] text-slate-400">10 тестов, Bandit SAST, Docker Build</p>
           </div>
           <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
-            <span class="text-xs text-slate-500">Эндпоинт мониторинга</span>
+            <span class="text-xs text-slate-500">Health Check URL</span>
             <div class="text-sm font-bold text-blue-600 font-mono">GET /api/health</div>
-            <p class="text-[11px] text-slate-400">Интеграция с UptimeRobot</p>
+            <p class="text-[11px] text-slate-400">Интеграция с UptimeRobot (30s ping)</p>
           </div>
           <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
-            <span class="text-xs text-slate-500">Формат логов</span>
+            <span class="text-xs text-slate-500">Формат журнала логов</span>
             <div class="text-sm font-bold text-slate-800">RFC 5424 JSON</div>
-            <p class="text-[11px] text-slate-400">Централизованный сбор аудита</p>
+            <p class="text-[11px] text-slate-400">Централизованный аудит ИБ</p>
           </div>
         </div>
 
@@ -402,40 +487,250 @@
         <div class="bg-white border border-slate-200 rounded-2xl p-5 space-y-3 shadow-sm">
           <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">AI-Анализ логов безопасности (Шаг 7)</h3>
-            <button onclick="runAiLogAnalysis()" class="px-3 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
+            <button onclick="runAiLogAnalysis()" class="px-3.5 py-1.5 bg-purple-50 text-purple-700 hover:bg-purple-100 border border-purple-200 rounded-xl text-xs font-bold flex items-center gap-1.5 transition">
               <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Запустить AI-аудит логов
             </button>
           </div>
-          <div id="ai-log-analysis-result" class="text-xs bg-purple-50/50 border border-purple-100 p-4 rounded-xl text-slate-700">
-            Нажмите кнопку для запуска AI-анализа последних событий безопасности и выявления аномалий.
+          <div id="ai-log-analysis-result" class="text-xs bg-purple-50/50 border border-purple-100 p-4 rounded-xl text-slate-700 leading-relaxed">
+            Нажмите кнопку для запуска AI-анализа недавних событий и выявления аномалий.
           </div>
         </div>
 
         <!-- Журнал логов -->
-        <div class="bg-slate-900 text-slate-200 rounded-2xl p-5 shadow-sm space-y-2">
+        <div class="bg-slate-900 text-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
           <div class="flex items-center justify-between border-b border-slate-800 pb-2">
-            <span class="text-xs font-mono font-bold text-emerald-400">Live JSON Audit Stream (RFC 5424)</span>
+            <span class="text-xs font-mono font-bold text-emerald-400 flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live JSON Audit Stream (RFC 5424)
+            </span>
             <button onclick="fetchAuditLogs()" class="text-xs text-slate-400 hover:text-white flex items-center gap-1">
               <i data-lucide="refresh-cw" class="w-3 h-3"></i> Обновить
             </button>
           </div>
-          <pre id="audit-log-stream" class="text-[11px] font-mono overflow-x-auto max-h-60 space-y-1">Загрузка логов...</pre>
+          <pre id="audit-log-stream" class="text-[11px] font-mono overflow-x-auto max-h-60 leading-relaxed text-slate-300">Загрузка логов...</pre>
         </div>
       </section>
 
     </main>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- МОДАЛЬНОЕ ОКНО: ПРОСМОТРЩИК ДОКУМЕНТОВ С ПОДСВЕТКОЙ ЦИТАТ (DOCUMENT VIEWER) -->
+  <!-- ========================================================================= -->
+  <div id="modal-doc-viewer" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-3xl w-full h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 id="viewer-doc-title" class="text-sm font-bold text-slate-900">Заголовок документа</h3>
+            <p id="viewer-doc-meta" class="text-[11px] text-slate-500">Метаданные документа</p>
+          </div>
+        </div>
+        <button onclick="closeDocViewer()" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto flex-1 font-mono text-xs leading-relaxed whitespace-pre-wrap text-slate-800" id="viewer-doc-content">
+        Загрузка текста...
+      </div>
+
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+        <span>Статус: Локализовано в контуре РФ (152-ФЗ)</span>
+        <button onclick="closeDocViewer()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 rounded-lg font-semibold text-slate-700">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- МОДАЛЬНОЕ ОКНО: ЗАГРУЗКА НОВОГО ДОКУМЕНТА (DRAG & DROP) -->
+  <!-- ========================================================================= -->
+  <div id="modal-upload" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-xl w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="upload-cloud" class="w-4 h-4 text-blue-600"></i>
+          Загрузка и индексация документа в RAG
+        </h3>
+        <button onclick="closeUploadModal()" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleDocumentUpload(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Название документа / регламента:</label>
+          <input type="text" id="upload-title" required placeholder="Например: Порядок использования нейросетей в компании v1.0" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Департамент:</label>
+            <select id="upload-dept" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <option value="Информационная Безопасность">Информационная Безопасность</option>
+              <option value="Кадры и HR">Кадры и HR</option>
+              <option value="IT & Разработка">IT & Разработка</option>
+              <option value="Юридический департамент">Юридический департамент</option>
+              <option value="Общий отдел">Общий отдел</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Гриф доступа:</label>
+            <select id="upload-access" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <option value="public">PUBLIC (Публичный)</option>
+              <option value="internal" selected>INTERNAL (Для служебного пользования)</option>
+              <option value="confidential">CONFIDENTIAL (Коммерческая тайна)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Поле загрузки файла (Drag & Drop) -->
+        <div class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-2xl p-5 text-center cursor-pointer transition bg-slate-50" onclick="document.getElementById('file-input').click()">
+          <input type="file" id="file-input" class="hidden" accept=".txt,.md,.json,.csv,.pdf" onchange="handleFileSelect(event)">
+          <i data-lucide="file-up" class="w-8 h-8 text-blue-600 mx-auto mb-1"></i>
+          <span class="font-bold text-slate-700 block">Нажмите для выбора файла или перетащите его сюда</span>
+          <span class="text-[11px] text-slate-400">Поддерживаются .txt, .md, .json, .csv</span>
+          <div id="file-selected-name" class="mt-2 text-blue-600 font-bold text-xs hidden"></div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Или введите текст напрямую:</label>
+          <textarea id="upload-content" rows="4" required placeholder="Введите текст регламента, правила или статьи..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none"></textarea>
+        </div>
+
+        <div id="upload-status" class="hidden p-3 bg-blue-50 text-blue-700 rounded-xl font-medium animate-pulse">
+          Выполняется чанкинг и векторная индексация документа...
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeUploadModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold">Отмена</button>
+          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20">Индексировать в RAG</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- МОДАЛЬНОЕ ОКНО: ИНСПЕКТОР ВЕКТОРНЫХ ЧАНКОВ (CHUNK INSPECTOR) -->
+  <!-- ========================================================================= -->
+  <div id="modal-chunk-inspector" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-4xl w-full h-[85vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="binary" class="w-4 h-4 text-purple-600"></i>
+          Инспектор векторных чанков (PostgreSQL pgvector)
+        </h3>
+        <button onclick="closeChunkInspectorModal()" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-4 overflow-y-auto flex-1">
+        <div class="mb-3 text-xs text-slate-500">
+          Каждый документ автоматически разбит на чанки с перекрытием. Для каждого чанка рассчитан TF-IDF вектор в евклидовом пространстве для косинусного поиска:
+        </div>
+        <div id="chunks-table-container" class="space-y-2">
+          <!-- Чанки -->
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+        <button onclick="closeChunkInspectorModal()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-semibold text-slate-700">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ RAG (ГИПЕРПАРАМЕТРЫ) -->
+  <!-- ========================================================================= -->
+  <div id="modal-rag-settings" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i>
+          Настройки параметров RAG-поиска
+        </h3>
+        <button onclick="toggleRagSettingsModal()" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Языковая модель (LLM):</label>
+          <select id="setting-model" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+            <option value="YandexGPT-Pro">YandexGPT-Pro (Основная РФ)</option>
+            <option value="DeepSeek-V3">DeepSeek-V3 (OpenSource On-Premise)</option>
+            <option value="Local-Neural">Local Neural Extractor (Офлайн 152-ФЗ)</option>
+            <option value="Ollama-Local">Ollama (localhost:11434)</option>
+          </select>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-slate-700">Количество чанков (Top-K):</label>
+            <span id="label-topk" class="font-bold text-blue-600">3</span>
+          </div>
+          <input type="range" id="setting-topk" min="1" max="6" value="3" oninput="document.getElementById('label-topk').textContent = this.value" class="w-full accent-blue-600">
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="font-semibold text-slate-700">Порог сходства (Similarity Threshold):</label>
+            <span id="label-threshold" class="font-bold text-blue-600">0.08</span>
+          </div>
+          <input type="range" id="setting-threshold" min="0.02" max="0.30" step="0.02" value="0.08" oninput="document.getElementById('label-threshold').textContent = this.value" class="w-full accent-blue-600">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Режим генерации ответа:</label>
+          <select id="setting-mode" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+            <option value="analytic">Развернутый аналитический ответ</option>
+            <option value="strict">Строгое соответствие фактам (152-ФЗ)</option>
+            <option value="brief">Краткая выжимка (Bullet points)</option>
+          </select>
+        </div>
+
+        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-500">
+          💡 Параметры применяются на лету к следующим запросам поиска.
+        </div>
+
+        <div class="flex justify-end pt-2">
+          <button onclick="saveRagSettings()" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-sm">
+            Применить
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- КЛИЕНТСКАЯ ЛОГИКА (JAVASCRIPT) -->
+  <!-- ========================================================================= -->
   <script>
     lucide.createIcons();
+
     const API_URL = (window.location.protocol.startsWith('http')) ? `${window.location.origin}/api` : 'http://localhost:8000/api';
     let currentUserRole = 'security_officer';
+    let currentDeptFilter = 'all';
+    let chatHistory = [];
+    let ragSettings = {
+      model: 'YandexGPT-Pro',
+      top_k: 3,
+      threshold: 0.08,
+      mode: 'analytic'
+    };
 
-    function changeRole() {
-      currentUserRole = document.getElementById('role-selector').value;
-      triggerMetrikaGoal('ROLE_SWITCHED_' + currentUserRole);
-    }
-
+    // -------------------------------------------------------------------------
+    // НАВИГАЦИЯ И ВКЛАДКИ
+    // -------------------------------------------------------------------------
     function switchTab(t) {
       ['chat', 'docs', 'oauth', 'analytics', 'billing', 'monitoring'].forEach(id => {
         const view = document.getElementById('view-' + id);
@@ -450,9 +745,25 @@
       });
       lucide.createIcons();
       if (t === 'docs') loadDocuments();
+      if (t === 'analytics') refreshAnalytics();
       if (t === 'monitoring') fetchAuditLogs();
     }
 
+    function changeRole() {
+      currentUserRole = document.getElementById('user-role-select').value;
+      triggerMetrikaGoal('ROLE_SWITCHED', { role: currentUserRole });
+      loadDocuments();
+      document.getElementById('oauth-session-view').textContent = JSON.stringify({
+        authenticated: true,
+        active_role: currentUserRole,
+        compliance_policy: "152-ФЗ РФ Active",
+        timestamp: new Date().toISOString()
+      }, null, 2);
+    }
+
+    // -------------------------------------------------------------------------
+    // RAG ЧАТ И ПОИСК
+    // -------------------------------------------------------------------------
     function quickPrompt(text) {
       document.getElementById('chat-input').value = text;
       handleChatSubmit(new Event('submit'));
@@ -469,18 +780,17 @@
       // Сообщение пользователя
       const uMsg = document.createElement('div');
       uMsg.className = "max-w-3xl ml-auto w-full flex justify-end";
-      uMsg.innerHTML = `<div class="bg-blue-600 text-white rounded-2xl rounded-tr-sm p-4 text-sm max-w-xl shadow-sm"><p>${q}</p></div>`;
+      uMsg.innerHTML = `<div class="bg-blue-600 text-white rounded-2xl rounded-tr-sm p-4 text-sm max-w-xl shadow-sm"><p>${escapeHtml(q)}</p></div>`;
       container.appendChild(uMsg);
       input.value = '';
 
       // Лоадер
       const loader = document.createElement('div');
       loader.className = "max-w-3xl mr-auto w-full animate-pulse";
-      loader.innerHTML = `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2"><div class="h-3 bg-slate-200 rounded w-1/4"></div><div class="h-3 bg-slate-100 rounded w-full"></div></div>`;
+      loader.innerHTML = `<div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-2"><div class="h-3 bg-slate-200 rounded w-1/4"></div><div class="h-3 bg-slate-100 rounded w-full"></div><div class="h-3 bg-slate-100 rounded w-2/3"></div></div>`;
       container.appendChild(loader);
       container.scrollTop = container.scrollHeight;
 
-      // Трекинг события в Яндекс.Метрику
       triggerMetrikaGoal('SEARCH_QUERY_SENT', { query: q });
 
       try {
@@ -490,43 +800,72 @@
             'Content-Type': 'application/json',
             'X-User-Role': currentUserRole
           },
-          body: JSON.stringify({ query: q, model: 'YandexGPT-Pro' })
+          body: JSON.stringify({
+            query: q,
+            model: ragSettings.model,
+            top_k: ragSettings.top_k,
+            similarity_threshold: ragSettings.threshold,
+            mode: ragSettings.mode
+          })
         });
+
         const data = await res.json();
         loader.remove();
 
+        chatHistory.push({ query: q, answer: data.answer, citations: data.citations });
+
         const aMsg = document.createElement('div');
         aMsg.className = "max-w-3xl mr-auto w-full";
+
+        let citationsHtml = '';
+        if (data.citations && data.citations.length) {
+          citationsHtml = `
+            <div class="pt-3 border-t border-slate-100 space-y-2">
+              <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Подтвержденные статьи первоисточника (pgvector):</span>
+              <div class="space-y-2">
+                ${data.citations.map(c => `
+                  <div class="p-3 bg-slate-50 hover:bg-blue-50/60 border border-slate-200 rounded-xl text-xs space-y-1.5 transition cursor-pointer" onclick="openDocViewer('${c.doc_id}', '${escapeAttr(c.article)}')">
+                    <div class="flex items-center justify-between">
+                      <b class="text-blue-700 font-semibold flex items-center gap-1.5">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> ${c.doc_title}
+                      </b>
+                      <span class="text-[10px] bg-white border border-slate-200 px-2 py-0.5 rounded font-mono font-bold text-emerald-700">${c.similarity_percent} сходство</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500 font-mono">${c.article}</div>
+                    <p class="text-slate-700 italic border-l-2 border-blue-400 pl-2">«${c.quote}»</p>
+                    <span class="text-[10px] text-blue-600 font-bold flex items-center gap-1">
+                      <i data-lucide="external-link" class="w-3 h-3"></i> Открыть документ с подсветкой цитаты
+                    </span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
         aMsg.innerHTML = `
           <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
             <div class="flex items-center justify-between border-b border-slate-100 pb-2">
               <span class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                <i data-lucide="bot" class="w-4 h-4 text-blue-600"></i> Ответ DocuMind (${data.latency_ms || 14} мс)
+                <i data-lucide="bot" class="w-4 h-4 text-blue-600"></i> DocuMind RAG (${data.latency_ms || 14} мс)
               </span>
-              <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono">${data.model_used}</span>
+              <span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded font-mono text-slate-600">${data.model_used}</span>
             </div>
             ${data.is_confidential_warning ? `
-              <div class="p-3 bg-red-50 border border-red-200 text-red-800 text-xs rounded-xl flex items-start gap-2">
-                <i data-lucide="alert-octagon" class="w-4 h-4 shrink-0 mt-0.5"></i>
-                <div><b>Отказ доступа (152-ФЗ РФ):</b> ${data.answer}</div>
+              <div class="p-3.5 bg-red-50 border border-red-200 text-red-800 text-xs rounded-xl flex items-start gap-2.5">
+                <i data-lucide="alert-octagon" class="w-5 h-5 shrink-0 mt-0.5 text-red-600"></i>
+                <div class="leading-relaxed"><b>Отказ доступа (152-ФЗ РФ):</b><br>${data.answer}</div>
               </div>
             ` : `
-              <p class="text-slate-800 text-sm whitespace-pre-line leading-relaxed">${data.answer}</p>
+              <div class="text-slate-800 text-sm whitespace-pre-line leading-relaxed">${data.answer}</div>
             `}
-            ${data.citations && data.citations.length ? `
-              <div class="pt-2 border-t border-slate-100 space-y-2">
-                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Подтвержденные первоисточники из базы:</span>
-                ${data.citations.map(c => `
-                  <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
-                    <div class="flex items-center justify-between">
-                      <b class="text-blue-700 font-semibold">${c.doc_title}</b>
-                      <span class="text-[10px] bg-white border border-slate-200 px-1.5 py-0.5 rounded font-mono">${c.article}</span>
-                    </div>
-                    <p class="text-slate-600 italic">«${c.quote}»</p>
-                  </div>
-                `).join('')}
-              </div>
-            ` : ''}
+            ${citationsHtml}
+            <div class="flex items-center justify-between pt-1 text-[11px] text-slate-400">
+              <span>Семантическое ранжирование: Cosine distance</span>
+              <button onclick="copyAnswerText(this)" class="hover:text-slate-700 flex items-center gap-1">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Копировать
+              </button>
+            </div>
           </div>
         `;
         container.appendChild(aMsg);
@@ -538,26 +877,106 @@
       }
     }
 
+    function copyAnswerText(btn) {
+      const card = btn.closest('.bg-white');
+      const text = card.innerText;
+      navigator.clipboard.writeText(text);
+      btn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 text-emerald-600"></i> Скопировано`;
+      lucide.createIcons();
+      setTimeout(() => {
+        btn.innerHTML = `<i data-lucide="copy" class="w-3.5 h-3.5"></i> Копировать`;
+        lucide.createIcons();
+      }, 2000);
+    }
+
+    function clearChat() {
+      document.getElementById('chat-messages').innerHTML = '';
+      chatHistory = [];
+    }
+
+    function exportChatMarkdown() {
+      if (!chatHistory.length) {
+        alert('Диалог пуст. Задайте вопросы для экспорта.');
+        return;
+      }
+      let md = '# DocuMind AI — Протокол семантического RAG-диалога\n\n';
+      md += `**Дата:** ${new Date().toLocaleString()}\n`;
+      md += `**Роль:** ${currentUserRole}\n\n---\n\n`;
+
+      chatHistory.forEach((item, idx) => {
+        md += `### Запрос #${idx+1}: ${item.query}\n\n`;
+        md += `${item.answer}\n\n`;
+        if (item.citations && item.citations.length) {
+          md += `**Использованные цитаты:**\n`;
+          item.citations.forEach(c => {
+            md += `* **${c.doc_title}** (${c.article}): «${c.quote}»\n`;
+          });
+        }
+        md += `\n---\n\n`;
+      });
+
+      const blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `documind_rag_dialog_${Date.now()}.md`;
+      a.click();
+    }
+
+    // -------------------------------------------------------------------------
+    // РЕЕСТР ДОКУМЕНТОВ
+    // -------------------------------------------------------------------------
     async function loadDocuments() {
       const container = document.getElementById('docs-list');
       container.innerHTML = '<div class="text-xs text-slate-500">Загрузка данных из PostgreSQL pgvector...</div>';
       try {
-        const res = await fetch(`${API_URL}/documents`);
+        let url = `${API_URL}/documents`;
+        if (currentDeptFilter !== 'all') {
+          url += `?department=${encodeURIComponent(currentDeptFilter)}`;
+        }
+        const res = await fetch(url, {
+          headers: { 'X-User-Role': currentUserRole }
+        });
         const json = await res.json();
+
+        document.getElementById('header-chunks-count').textContent = `${json.data.reduce((acc, d) => acc + (d.chunks_count || 3), 0)} чанков`;
+
+        if (!json.data.length) {
+          container.innerHTML = '<div class="p-6 bg-white rounded-2xl text-center text-xs text-slate-400">Нет документов по выбранному фильтру.</div>';
+          return;
+        }
+
         container.innerHTML = json.data.map(d => `
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-blue-300 transition">
             <div class="space-y-1">
               <div class="flex items-center gap-2">
                 <h4 class="text-sm font-bold text-slate-900">${d.title}</h4>
-                <span class="text-[10px] px-2 py-0.5 rounded font-mono ${d.access_level === 'confidential' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-blue-50 text-blue-700 border border-blue-200'}">
+                <span class="text-[10px] px-2 py-0.5 rounded font-mono font-bold ${
+                  d.access_level === 'confidential' ? 'bg-red-50 text-red-700 border border-red-200' :
+                  d.access_level === 'internal' ? 'bg-amber-50 text-amber-700 border border-amber-200' :
+                  'bg-blue-50 text-blue-700 border border-blue-200'
+                }">
                   ${d.access_level.toUpperCase()}
+                </span>
+                <span class="text-[10px] bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded font-bold font-mono">
+                  ${d.chunks_count || 4} чанков
                 </span>
               </div>
               <p class="text-xs text-slate-500">${d.department} • Версия ${d.version} • ${d.file_name} (${d.file_size_mb} МБ)</p>
             </div>
-            <button onclick="triggerMetrikaGoal('DOC_DOWNLOAD', { id: '${d.id}' })" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
-              <i data-lucide="download" class="w-3.5 h-3.5"></i> Скачать
-            </button>
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="openDocViewer('${d.id}')" class="px-3 py-1.5 bg-slate-50 hover:bg-blue-50 hover:text-blue-700 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+                <i data-lucide="book-open" class="w-3.5 h-3.5"></i> Читать
+              </button>
+              <button onclick="triggerMetrikaGoal('DOC_DOWNLOAD', { id: '${d.id}' }); alert('Регламент «' + '${escapeAttr(d.title)}' + '» сохранен в рабочую папку.')" class="px-3 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i> PDF
+              </button>
+              ${d.id.startsWith('DOC-USR-') ? `
+                <button onclick="deleteDocument('${d.id}')" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Удалить">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              ` : ''}
+            </div>
           </div>
         `).join('');
         lucide.createIcons();
@@ -566,6 +985,190 @@
       }
     }
 
+    function filterDocs(dept) {
+      currentDeptFilter = dept;
+      document.querySelectorAll('.doc-filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-dept') === dept) {
+          btn.className = "px-3 py-1 bg-blue-600 text-white rounded-lg text-xs font-semibold doc-filter-btn";
+        } else {
+          btn.className = "px-3 py-1 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 rounded-lg text-xs font-semibold doc-filter-btn";
+        }
+      });
+      loadDocuments();
+    }
+
+    async function deleteDocument(docId) {
+      if (!confirm('Удалить данный документ и все его векторные эмбеддинги?')) return;
+      await fetch(`${API_URL}/documents/${docId}`, { method: 'DELETE' });
+      loadDocuments();
+    }
+
+    // -------------------------------------------------------------------------
+    // ПРОСМОТРЩИК ДОКУМЕНТОВ С ПОДСВЕТКОЙ
+    // -------------------------------------------------------------------------
+    async function openDocViewer(docId, highlightArticle = null) {
+      const modal = document.getElementById('modal-doc-viewer');
+      const titleEl = document.getElementById('viewer-doc-title');
+      const metaEl = document.getElementById('viewer-doc-meta');
+      const contentEl = document.getElementById('viewer-doc-content');
+
+      modal.classList.remove('hidden');
+      contentEl.textContent = 'Загрузка полного текста регламента...';
+
+      try {
+        const res = await fetch(`${API_URL}/documents/${docId}`, {
+          headers: { 'X-User-Role': currentUserRole }
+        });
+        if (res.status === 403) {
+          contentEl.innerHTML = '<div class="p-4 bg-red-50 text-red-700 rounded-xl font-sans"><b>Отказ доступа (152-ФЗ РФ):</b> Данный документ имеет гриф CONFIDENTIAL и заблокирован для текущей роли пользователя.</div>';
+          return;
+        }
+        const json = await res.json();
+        const doc = json.document;
+
+        titleEl.textContent = doc.title;
+        metaEl.textContent = `${doc.department} • Версия ${doc.version} • ${json.chunks_count} векторных чанков`;
+
+        let rawText = doc.content || 'Текст документа отсутствует';
+
+        if (highlightArticle) {
+          // Подсветка статьи
+          const safeArt = escapeRegExp(highlightArticle);
+          const regex = new RegExp(`(${safeArt}[\\s\\S]*?)(?=\\n\\n[А-ЯA-Z]|$)`, 'i');
+          if (regex.test(rawText)) {
+            rawText = rawText.replace(regex, '<span class="highlight-cite">$1</span>');
+            contentEl.innerHTML = rawText;
+            setTimeout(() => {
+              const el = contentEl.querySelector('.highlight-cite');
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 200);
+            return;
+          }
+        }
+        contentEl.textContent = rawText;
+      } catch (e) {
+        contentEl.textContent = 'Ошибка загрузки документа.';
+      }
+    }
+
+    function closeDocViewer() {
+      document.getElementById('modal-doc-viewer').classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------------------
+    // ЗАГРУЗКА ДОКУМЕНТОВ (DRAG & DROP)
+    // -------------------------------------------------------------------------
+    function openUploadModal() {
+      document.getElementById('modal-upload').classList.remove('hidden');
+    }
+
+    function closeUploadModal() {
+      document.getElementById('modal-upload').classList.add('hidden');
+      document.getElementById('upload-status').classList.add('hidden');
+      document.getElementById('file-selected-name').classList.add('hidden');
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      document.getElementById('upload-title').value = file.name.replace(/\.[^/.]+$/, "");
+      const nameBadge = document.getElementById('file-selected-name');
+      nameBadge.textContent = `Выбран файл: ${file.name} (${Math.round(file.size / 1024)} КБ)`;
+      nameBadge.classList.remove('hidden');
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        document.getElementById('upload-content').value = evt.target.result;
+      };
+      reader.readAsText(file);
+    }
+
+    async function handleDocumentUpload(e) {
+      e.preventDefault();
+      const title = document.getElementById('upload-title').value.trim();
+      const department = document.getElementById('upload-dept').value;
+      const access_level = document.getElementById('upload-access').value;
+      const content = document.getElementById('upload-content').value.trim();
+
+      const statusBox = document.getElementById('upload-status');
+      statusBox.classList.remove('hidden');
+
+      try {
+        const res = await fetch(`${API_URL}/documents/upload`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, department, access_level, content })
+        });
+        const data = await res.json();
+        closeUploadModal();
+        alert(`✅ Успех!\n${data.message}`);
+        loadDocuments();
+        triggerMetrikaGoal('DOCUMENT_UPLOADED', { doc_id: data.doc_id });
+      } catch (err) {
+        alert('Ошибка при загрузке документа.');
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // ИНСПЕКТОР ВЕКТОРНЫХ ЧАНКОВ
+    // -------------------------------------------------------------------------
+    async function openChunkInspectorModal() {
+      const modal = document.getElementById('modal-chunk-inspector');
+      const table = document.getElementById('chunks-table-container');
+      modal.classList.remove('hidden');
+      table.innerHTML = '<div class="text-xs text-slate-500">Загрузка структуры векторов...</div>';
+
+      try {
+        const res = await fetch(`${API_URL}/chunks`);
+        const json = await res.json();
+        table.innerHTML = json.data.map(c => `
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-mono font-bold text-blue-700">${c.chunk_id}</span>
+              <span class="font-bold text-slate-700">${c.doc_title}</span>
+              <span class="text-[10px] bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-mono font-bold">${c.token_count} токенов</span>
+            </div>
+            <div class="text-slate-700 font-semibold">${c.section}</div>
+            <p class="text-slate-600 font-mono text-[11px] bg-white p-2 rounded border border-slate-100">${c.preview}</p>
+            <div class="text-[10px] text-slate-400 font-mono">
+              Векторные токены (n-gram sample): ${c.vector_top_terms.join(', ')}
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        table.innerHTML = '<div class="text-xs text-red-600">Ошибка загрузки чанков.</div>';
+      }
+    }
+
+    function closeChunkInspectorModal() {
+      document.getElementById('modal-chunk-inspector').classList.add('hidden');
+    }
+
+    // -------------------------------------------------------------------------
+    // НАСТРОЙКИ RAG
+    // -------------------------------------------------------------------------
+    function toggleRagSettingsModal() {
+      const m = document.getElementById('modal-rag-settings');
+      m.classList.toggle('hidden');
+    }
+
+    function saveRagSettings() {
+      ragSettings.model = document.getElementById('setting-model').value;
+      ragSettings.top_k = parseInt(document.getElementById('setting-topk').value);
+      ragSettings.threshold = parseFloat(document.getElementById('setting-threshold').value);
+      ragSettings.mode = document.getElementById('setting-mode').value;
+
+      document.getElementById('active-model-badge').textContent = `${ragSettings.model} / Hybrid RAG`;
+      document.getElementById('active-rag-params').textContent = `Top-K: ${ragSettings.top_k} | Порог: ${ragSettings.threshold}`;
+
+      toggleRagSettingsModal();
+      triggerMetrikaGoal('RAG_SETTINGS_UPDATED', ragSettings);
+    }
+
+    // -------------------------------------------------------------------------
+    // OAUTH2 АВТОРИЗАЦИЯ
+    // -------------------------------------------------------------------------
     async function loginOAuth(provider) {
       try {
         const res = await fetch(`${API_URL}/auth/login-simulated`, {
@@ -576,16 +1179,70 @@
         const data = await res.json();
         if (data.success) {
           const s = data.session;
-          document.getElementById('auth-panel').innerHTML = `
-            <div class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 px-3 py-1.5 rounded-xl text-xs">
-              <img src="${s.avatar}" class="w-5 h-5 rounded-full" />
-              <span class="font-bold text-emerald-800">${s.name}</span>
-              <span class="text-[10px] bg-white px-1.5 py-0.2 rounded font-mono">${s.provider.toUpperCase()}</span>
-            </div>
-          `;
-          document.getElementById('oauth-session-view').innerHTML = JSON.stringify(s, null, 2);
+          document.getElementById('oauth-session-view').textContent = JSON.stringify(s, null, 2);
+          alert(`Успешный вход через ${provider.toUpperCase()}!\nПользователь: ${s.name}\nРоль: ${s.role}`);
           triggerMetrikaGoal('OAUTH_LOGIN_SUCCESS', { provider: provider });
         }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // АНАЛИТИКА И ГРАФИКИ (CHART.JS)
+    // -------------------------------------------------------------------------
+    let deptChartInstance = null;
+    let securityChartInstance = null;
+
+    async function refreshAnalytics() {
+      try {
+        const res = await fetch(`${API_URL}/analytics/summary`);
+        const data = await res.json();
+
+        document.getElementById('metric-total-queries').textContent = data.queries_count;
+        document.getElementById('metric-blocked-queries').textContent = data.rbac_blocked_count;
+        document.getElementById('metric-avg-latency').textContent = `${data.avg_latency_ms} мс`;
+
+        // Диаграмма отделов
+        const deptCtx = document.getElementById('deptChart').getContext('2d');
+        if (deptChartInstance) deptChartInstance.destroy();
+        deptChartInstance = new Chart(deptCtx, {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(data.departments_distribution),
+            datasets: [{
+              data: Object.values(data.departments_distribution),
+              backgroundColor: ['#2563eb', '#9333ea', '#059669', '#d97706', '#dc2626']
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+          }
+        });
+
+        // Диаграмма безопасности
+        const secCtx = document.getElementById('securityChart').getContext('2d');
+        if (securityChartInstance) securityChartInstance.destroy();
+        securityChartInstance = new Chart(secCtx, {
+          type: 'bar',
+          data: {
+            labels: ['Разрешено (200 OK)', '152-ФЗ Блокировка (RBAC)'],
+            datasets: [{
+              label: 'Количество обращений',
+              data: [data.queries_count, data.rbac_blocked_count],
+              backgroundColor: ['#10b981', '#ef4444'],
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+          }
+        });
       } catch (e) {
         console.error(e);
       }
@@ -598,7 +1255,6 @@
         }
       } catch (e) {}
 
-      // Серверный прокси трекинга (152-ФЗ)
       fetch(`${API_URL}/analytics/track`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -611,9 +1267,13 @@
         item.className = "text-emerald-700";
         item.textContent = `[${new Date().toLocaleTimeString()}] ym(98765432, 'reachGoal', '${goalName}') -> Отправлено в Яндекс.Метрику`;
         log.appendChild(item);
+        log.scrollTop = log.scrollHeight;
       }
     }
 
+    // -------------------------------------------------------------------------
+    // ЮKASSA ПЛАТЕЖИ
+    // -------------------------------------------------------------------------
     async function createYookassaInvoice() {
       const res = await fetch(`${API_URL}/billing/create-invoice`, {
         method: 'POST',
@@ -622,10 +1282,16 @@
       });
       const data = await res.json();
       document.getElementById('billing-result').innerHTML = `
-        <div class="text-emerald-700"><b>Счет выставлен в ЮKassa:</b></div>
-        <div>Заказ: ${data.order_id}</div>
-        <div>Сумма: ${data.amount} ${data.currency}</div>
-        <div>URL оплаты: <a href="${data.payment_url}" target="_blank" class="text-blue-600 underline">${data.payment_url}</a></div>
+        <div class="text-emerald-700 font-bold mb-1">✅ Счет успешно сформирован в ЮKassa:</div>
+        <div><b>Номер заказа:</b> ${data.order_id}</div>
+        <div><b>Сумма к оплате:</b> ${data.amount} ${data.currency} (включая НДС)</div>
+        <div class="mt-2 text-blue-600 underline">
+          <a href="${data.payment_url}" target="_blank">${data.payment_url}</a>
+        </div>
+        <div class="mt-2 flex items-center gap-2">
+          <img src="${data.qr_code_demo}" class="w-20 h-20 border border-slate-200 rounded-lg" />
+          <span class="text-[11px] text-slate-500">QR-код СБП для оплаты корпоративной лицензии</span>
+        </div>
       `;
       triggerMetrikaGoal('YOOKASSA_INVOICE_INIT');
     }
@@ -641,13 +1307,17 @@
       });
       const data = await res.json();
       document.getElementById('billing-result').innerHTML = `
-        <div class="text-emerald-700"><b>Вебхук обработан успешно:</b></div>
-        <div>Статус: 200 OK</div>
-        <div>Ответ сервера: ${data.message}</div>
+        <div class="text-emerald-700 font-bold">✅ Входящий Webhook ЮKassa обработан (200 OK):</div>
+        <div><b>Событие:</b> payment.succeeded</div>
+        <div><b>Результат:</b> ${data.message}</div>
+        <div class="text-purple-700 font-semibold mt-1">Кластер переведен в статус: Лицензия активна до 2027 г.</div>
       `;
       triggerMetrikaGoal('PAYMENT_SUCCEEDED_WEBHOOK');
     }
 
+    // -------------------------------------------------------------------------
+    // МОНИТОРИНГ & ЛОГИ
+    // -------------------------------------------------------------------------
     async function fetchAuditLogs() {
       try {
         const res = await fetch(`${API_URL}/logs`);
@@ -678,6 +1348,20 @@
         el.textContent = 'Ошибка вызова AI анализатора.';
       }
     }
+
+    // Вспомогательные функции
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    function escapeAttr(str) {
+      return (str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // Начальная загрузка
+    loadDocuments();
   </script>
 </body>
 </html>
