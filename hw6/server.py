@@ -26,11 +26,25 @@ import uuid
 import math
 import re
 import urllib.parse
+import hashlib
+import secrets
 from collections import Counter
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
 
 SERVER_START_TIME = time.time()
+
+def hash_password(password: str, salt: str = None) -> tuple:
+    """Генерация соли и вычисление SHA-256 хеша пароля"""
+    if not salt:
+        salt = secrets.token_hex(16)
+    hashed = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
+    return hashed, salt
+
+def verify_password(password: str, salt: str, password_hash: str) -> bool:
+    """Верификация пароля против сохраненного хеша"""
+    hashed = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()
+    return hashed == password_hash
 
 CONFIG = {
     "PORT": 8000,
@@ -262,6 +276,56 @@ DOCUMENTS_SOURCE_TEXTS = {
     }
 }
 
+# ==============================================================================
+# БАЗА ДАННЫХ СОТРУДНИКОВ (САМОРЕГИСТРАЦИЯ ЗАКРЫТА, ТОЛЬКО АДМИНИСТРАТОР)
+# ==============================================================================
+INITIAL_USERS = [
+    {
+        "id": "usr-admin-01",
+        "email": "admin@documind.intra",
+        "name": "Александр Васильев (Системный администратор)",
+        "role": "admin",
+        "department": "IT & Разработка",
+        "salt": "salt_adm_9918a",
+        "password_hash": hashlib.sha256(("salt_adm_9918a" + "AdminPass123!").encode('utf-8')).hexdigest(),
+        "status": "active",
+        "created_at": "2026-09-01T08:00:00Z"
+    },
+    {
+        "id": "usr-sec-02",
+        "email": "sec_officer@documind.intra",
+        "name": "Никита Ковалев (Офицер ИБ)",
+        "role": "security_officer",
+        "department": "Информационная Безопасность",
+        "salt": "salt_sec_152fz",
+        "password_hash": hashlib.sha256(("salt_sec_152fz" + "SecOfficer123!").encode('utf-8')).hexdigest(),
+        "status": "active",
+        "created_at": "2026-09-05T09:30:00Z"
+    },
+    {
+        "id": "usr-hr-03",
+        "email": "manager@documind.intra",
+        "name": "Елена Романова (HR Руководитель)",
+        "role": "manager",
+        "department": "Кадры и HR",
+        "salt": "salt_hr_mgr88",
+        "password_hash": hashlib.sha256(("salt_hr_mgr88" + "ManagerPass123!").encode('utf-8')).hexdigest(),
+        "status": "active",
+        "created_at": "2026-09-10T11:00:00Z"
+    },
+    {
+        "id": "usr-dev-04",
+        "email": "employee@documind.intra",
+        "name": "Иван Смирнов (Инженер-разработчик)",
+        "role": "user",
+        "department": "IT & Разработка",
+        "salt": "salt_user_dev01",
+        "password_hash": hashlib.sha256(("salt_user_dev01" + "UserPass123!").encode('utf-8')).hexdigest(),
+        "status": "active",
+        "created_at": "2026-09-15T14:20:00Z"
+    }
+]
+
 DATABASE = {
     "departments": [
         {"id": "sec", "name": "Информационная Безопасность", "count": 3},
@@ -269,6 +333,7 @@ DATABASE = {
         {"id": "it", "name": "IT & Разработка", "count": 1},
         {"id": "legal", "name": "Юридический департамент", "count": 1},
     ],
+    "users": [dict(u) for u in INITIAL_USERS],
     "documents": [],
     "chunks": [],
     "sessions": {},
@@ -358,6 +423,24 @@ class DocuMindFullStackHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(response_bytes)))
         self.end_headers()
         self.wfile.write(response_bytes)
+
+    def _get_current_session(self):
+        auth_header = self.headers.get("Authorization", "")
+        token = None
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:].strip()
+        elif "X-Session-Token" in self.headers:
+            token = self.headers.get("X-Session-Token", "").strip()
+
+        if token and token in DATABASE.get("sessions", {}):
+            return DATABASE["sessions"][token]
+        return None
+
+    def _get_user_role(self):
+        session = self._get_current_session()
+        if session:
+            return session.get("role", "user")
+        return self.headers.get("X-User-Role", "user")
 
     def do_OPTIONS(self):
         self.send_response(204)
@@ -585,23 +668,49 @@ class DocuMindFullStackHandler(BaseHTTPRequestHandler):
             log_event("INFO", "OAUTH_INIT", {"provider": "google", "state": state_nonce})
             return
 
-        # 7. Сессия пользователя
-        if path == "/api/auth/session":
-            auth_header = self.headers.get("Authorization", "")
-            token = auth_header.replace("Bearer ", "") if auth_header.startswith("Bearer ") else None
-            session = DATABASE["sessions"].get(token) if token else None
-
+        # 7. Сессия пользователя (Аутентификация)
+        if path in ["/api/auth/session", "/api/auth/me"]:
+            session = self._get_current_session()
             if session:
+                user = next((u for u in DATABASE.get("users", []) if u["id"] == session.get("user_id")), None)
+                if user and user.get("status") == "blocked":
+                    self._send_json(403, {"authenticated": False, "error": "Пользователь заблокирован администратором безопасности"})
+                    return
                 self._send_json(200, {"authenticated": True, "user": session})
             else:
                 self._send_json(200, {
                     "authenticated": False,
                     "guest": {
-                        "name": "Гостевой доступ",
+                        "name": "Гостевой режим (Не авторизован)",
                         "role": "user",
-                        "email": "employee@corporate.intra"
+                        "email": "guest@corporate.intra"
                     }
                 })
+            return
+
+        # 7.1. Реестр корпоративных пользователей для Администратора (152-ФЗ RBAC)
+        if path == "/api/admin/users":
+            caller_role = self._get_user_role()
+            if caller_role != "admin":
+                log_event("WARN", "RBAC_ADMIN_ACCESS_DENIED", {"endpoint": "/api/admin/users", "role": caller_role})
+                self._send_json(403, {
+                    "error": "Access Denied (152-FZ / RBAC Policy)",
+                    "message": "Доступ к реестру сотрудников разрешен только системному администратору."
+                })
+                return
+
+            safe_users = [
+                {
+                    "id": u["id"],
+                    "name": u["name"],
+                    "email": u["email"],
+                    "role": u["role"],
+                    "department": u["department"],
+                    "status": u["status"],
+                    "created_at": u["created_at"]
+                } for u in DATABASE.get("users", [])
+            ]
+            self._send_json(200, {"success": True, "total": len(safe_users), "users": safe_users})
             return
 
         # 8. Журнал логов
@@ -632,6 +741,27 @@ class DocuMindFullStackHandler(BaseHTTPRequestHandler):
                 self._send_json(404, {"error": "Document not found"})
             return
 
+        if path.startswith("/api/admin/users/"):
+            caller_role = self._get_user_role()
+            if caller_role != "admin":
+                self._send_json(403, {"error": "Требуются права администратора"})
+                return
+            uid = path.replace("/api/admin/users/", "").strip()
+            target_user = next((u for u in DATABASE.get("users", []) if u["id"] == uid), None)
+            if not target_user:
+                self._send_json(404, {"error": "Пользователь не найден"})
+                return
+            if target_user["email"] == "admin@documind.intra":
+                self._send_json(400, {"error": "Нельзя удалить главного администратора системы"})
+                return
+            DATABASE["users"] = [u for u in DATABASE["users"] if u["id"] != uid]
+            tokens_to_del = [tok for tok, s in DATABASE["sessions"].items() if s.get("user_id") == uid]
+            for tok in tokens_to_del:
+                DATABASE["sessions"].pop(tok, None)
+            log_event("WARN", "USER_DELETED_BY_ADMIN", {"user_id": uid, "email": target_user["email"]})
+            self._send_json(200, {"success": True, "message": f"Учетная запись сотрудника {target_user['name']} удалена"})
+            return
+
         self._send_json(404, {"error": "Endpoint not found"})
 
     def do_POST(self):
@@ -648,7 +778,156 @@ class DocuMindFullStackHandler(BaseHTTPRequestHandler):
             self._send_json(422, {"error": "Malformed JSON payload", "details": str(e)})
             return
 
-        user_role = self.headers.get("X-User-Role", "user")
+        user_role = self._get_user_role()
+
+        # ======================================================================
+        # 0. АУТЕНТИФИКАЦИЯ И УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ (АДМИНИСТРАТОР)
+        # ======================================================================
+        if path == "/api/auth/login":
+            email = body.get("email", "").strip().lower()
+            password = body.get("password", "").strip()
+            if not email or not password:
+                self._send_json(400, {"error": "Укажите email и пароль для входа"})
+                return
+
+            user = next((u for u in DATABASE.get("users", []) if u["email"].lower() == email), None)
+            if not user:
+                log_event("WARN", "AUTH_LOGIN_FAILED", {"email": email, "reason": "User not found"})
+                self._send_json(401, {
+                    "error": "Неверный логин или пароль",
+                    "details": "Пользователь с указанным email не зарегистрирован администратором системы. Самостоятельная регистрация отключена (152-ФЗ)."
+                })
+                return
+
+            if user.get("status") == "blocked":
+                log_event("WARN", "AUTH_BLOCKED_USER_ATTEMPT", {"email": email, "user_id": user["id"]})
+                self._send_json(403, {
+                    "error": "Учетная запись заблокирована",
+                    "details": "Ваша учетная запись заблокирована администратором безопасности предприятия в соответствии с регламентом SEC-01."
+                })
+                return
+
+            if not verify_password(password, user["salt"], user["password_hash"]):
+                log_event("WARN", "AUTH_INVALID_PASSWORD", {"email": email})
+                self._send_json(401, {"error": "Неверный логин или пароль"})
+                return
+
+            token = f"tok_{secrets.token_hex(20)}"
+            session_profile = {
+                "token": token,
+                "user_id": user["id"],
+                "name": user["name"],
+                "email": user["email"],
+                "role": user["role"],
+                "department": user["department"],
+                "status": user["status"],
+                "auth_time": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            }
+            DATABASE["sessions"][token] = session_profile
+            log_event("INFO", "USER_LOGGED_IN", {"user_id": user["id"], "role": user["role"], "email": email})
+            self._send_json(200, {
+                "success": True,
+                "message": f"Добро пожаловать, {user['name']}!",
+                "token": token,
+                "user": session_profile
+            })
+            return
+
+        if path == "/api/auth/logout":
+            session = self._get_current_session()
+            if session and "token" in session:
+                DATABASE["sessions"].pop(session["token"], None)
+            self._send_json(200, {"success": True, "message": "Сессия успешно завершена"})
+            return
+
+        if path in ["/api/auth/register", "/api/register"]:
+            log_event("WARN", "SELF_REGISTRATION_REJECTED", {"ip": self.client_address[0]})
+            self._send_json(403, {
+                "error": "Регистрация закрыта",
+                "message": "Самостоятельная регистрация запрещена политикой безопасности предприятия (152-ФЗ РФ). Новых сотрудников в систему заводит только системный администратор."
+            })
+            return
+
+        # Добавление пользователя администратором
+        if path == "/api/admin/users":
+            caller_role = self._get_user_role()
+            if caller_role != "admin":
+                log_event("WARN", "RBAC_ADMIN_PROVISION_DENIED", {"role": caller_role})
+                self._send_json(403, {"error": "Доступ запрещен. Только администратор может регистрировать сотрудников."})
+                return
+
+            name = body.get("name", "").strip()
+            email = body.get("email", "").strip().lower()
+            role = body.get("role", "user").strip()
+            department = body.get("department", "IT & Разработка").strip()
+            password = body.get("password", "").strip() or "TempPass123!"
+
+            if not name or not email:
+                self._send_json(400, {"error": "ФИО и email обязательны для регистрации сотрудника"})
+                return
+
+            if any(u["email"].lower() == email for u in DATABASE.get("users", [])):
+                self._send_json(409, {"error": f"Сотрудник с email «{email}» уже зарегистрирован в системе"})
+                return
+
+            pwd_hash, salt = hash_password(password)
+            new_uid = f"usr-{int(time.time()) % 100000}"
+            new_user = {
+                "id": new_uid,
+                "email": email,
+                "name": name,
+                "role": role,
+                "department": department,
+                "salt": salt,
+                "password_hash": pwd_hash,
+                "status": "active",
+                "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+            }
+            DATABASE["users"].append(new_user)
+            log_event("INFO", "ADMIN_USER_PROVISIONED", {"admin_role": caller_role, "new_user_id": new_uid, "email": email, "role": role})
+
+            self._send_json(201, {
+                "success": True,
+                "message": f"Сотрудник «{name}» успешно зарегистрирован администратором.",
+                "user": {
+                    "id": new_user["id"],
+                    "email": new_user["email"],
+                    "name": new_user["name"],
+                    "role": new_user["role"],
+                    "department": new_user["department"],
+                    "status": new_user["status"],
+                    "created_at": new_user["created_at"]
+                }
+            })
+            return
+
+        # Переключение статуса активности сотрудника (Активен / Заблокирован)
+        if path.startswith("/api/admin/users/") and path.endswith("/toggle-status"):
+            caller_role = self._get_user_role()
+            if caller_role != "admin":
+                self._send_json(403, {"error": "Требуются права администратора"})
+                return
+            uid = path.replace("/api/admin/users/", "").replace("/toggle-status", "").strip()
+            target_user = next((u for u in DATABASE.get("users", []) if u["id"] == uid), None)
+            if not target_user:
+                self._send_json(404, {"error": "Пользователь не найден"})
+                return
+            if target_user["email"] == "admin@documind.intra":
+                self._send_json(400, {"error": "Нельзя заблокировать главного администратора системы"})
+                return
+            target_user["status"] = "blocked" if target_user.get("status") == "active" else "active"
+            if target_user["status"] == "blocked":
+                tokens_to_del = [tok for tok, s in DATABASE["sessions"].items() if s.get("user_id") == uid]
+                for tok in tokens_to_del:
+                    DATABASE["sessions"].pop(tok, None)
+            log_event("INFO", "USER_STATUS_TOGGLED", {"user_id": uid, "new_status": target_user["status"]})
+            self._send_json(200, {
+                "success": True,
+                "user_id": uid,
+                "status": target_user["status"],
+                "message": f"Статус сотрудника изменен на {target_user['status']}"
+            })
+            return
 
         # ======================================================================
         # 1. ЗАГРУЗКА И ВЕКТОРИЗАЦИЯ ДОКУМЕНТА (Drag & Drop)

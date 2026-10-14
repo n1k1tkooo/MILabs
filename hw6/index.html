@@ -68,10 +68,28 @@
         <span id="header-chunks-count" class="font-bold text-blue-700">24 чанка</span>
       </div>
 
-      <!-- Переключатель роли пользователя -->
-      <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-xl text-xs">
-        <span class="text-slate-500 text-[11px] pl-2 font-medium">Роль:</span>
-        <select id="user-role-select" onchange="changeRole()" class="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+      <!-- Профиль текущего сотрудника (Авторизация) -->
+      <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 p-1 rounded-xl text-xs">
+        <div id="header-user-avatar" class="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-sm">
+          НК
+        </div>
+        <div class="leading-tight text-left pr-1 hidden sm:block">
+          <div id="header-user-name" class="font-bold text-slate-800 text-[11px] truncate max-w-[130px]">Никита Ковалев</div>
+          <div id="header-user-role-badge" class="text-[9px] text-blue-700 font-semibold">Офицер ИБ</div>
+        </div>
+        <button onclick="openAuthModal()" class="px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition shadow-2xs" title="Авторизоваться / Сменить пользователя">
+          <i data-lucide="key-round" class="w-3.5 h-3.5 text-blue-600"></i>
+          <span class="hidden md:inline">Войти</span>
+        </button>
+        <button onclick="logoutUser()" class="p-1 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition" title="Выйти из системы">
+          <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Быстрый переключатель роли (для мгновенного теста 152-ФЗ) -->
+      <div class="hidden lg:flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl text-xs">
+        <span class="text-slate-500 text-[10px] pl-1 font-medium">Роль:</span>
+        <select id="user-role-select" onchange="changeRoleSelect()" class="bg-white border border-slate-200 rounded-lg px-2 py-0.5 text-xs font-bold text-blue-700 focus:outline-none">
           <option value="user">User (Инженер)</option>
           <option value="manager">Manager (HR)</option>
           <option value="security_officer" selected>Security Officer (ИБ)</option>
@@ -103,6 +121,13 @@
           <button id="nav-docs" onclick="switchTab('docs')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
             <i data-lucide="file-text" class="w-4 h-4"></i>
             <span>Реестр регламентов (БД)</span>
+          </button>
+          <button id="nav-users" onclick="switchTab('users')" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
+            <div class="flex items-center gap-3">
+              <i data-lucide="users" class="w-4 h-4 text-indigo-600"></i>
+              <span>Сотрудники (Админ)</span>
+            </div>
+            <span id="badge-users-count" class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-1.5 py-0.5 rounded-full border border-indigo-200">4</span>
           </button>
           <button id="nav-oauth" onclick="switchTab('oauth')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition">
             <i data-lucide="key-round" class="w-4 h-4"></i>
@@ -511,6 +536,95 @@
         </div>
       </section>
 
+      <!-- ===================================================================== -->
+      <!-- ВКЛАДКА 7: КОРПОРАТИВНЫЕ ПОЛЬЗОВАТЕЛИ (АДМИНИСТРАТОР) -->
+      <!-- ===================================================================== -->
+      <section id="view-users" class="flex-1 flex flex-col h-full overflow-y-auto hidden p-6 space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-slate-900">Управление сотрудниками & Ролевая модель RBAC</h2>
+              <span class="text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold px-2 py-0.5 rounded-full">
+                Только Администратор
+              </span>
+            </div>
+            <p class="text-xs text-slate-500">Реестр учетных записей предприятия • Закрытый контур по 152-ФЗ РФ • Хеширование ГОСТ / SHA-256</p>
+          </div>
+          <button onclick="openCreateUserModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-md shadow-indigo-500/20 transition shrink-0">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Завести сотрудника</span>
+          </button>
+        </div>
+
+        <!-- Уведомление о политике безопасности (закрытая регистрация) -->
+        <div class="p-4 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl flex items-start gap-3 shadow-xs">
+          <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+            <i data-lucide="shield-alert" class="w-4 h-4"></i>
+          </div>
+          <div class="text-xs text-amber-900 leading-relaxed">
+            <b>Политика безопасности предприятия (152-ФЗ и режим КТ):</b> Самостоятельная регистрация пользователей в системе категорически запрещена. Все учетные записи заводятся системным администратором с обязательным назначением ролей доступа (RBAC). Каждое действие фиксируется в защищенном аудит-логе.
+          </div>
+        </div>
+
+        <!-- KPI метрики пользователей -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+            <span class="text-xs text-slate-500">Всего сотрудников</span>
+            <div id="metric-total-users" class="text-xl font-bold text-indigo-600">4</div>
+            <p class="text-[11px] text-slate-400">Корпоративный домен</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+            <span class="text-xs text-slate-500">Офицеры ИБ & Админы</span>
+            <div id="metric-privileged-users" class="text-xl font-bold text-blue-600">2</div>
+            <p class="text-[11px] text-blue-400">Повышенные привилегии</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+            <span class="text-xs text-slate-500">Инженеры и Менеджеры</span>
+            <div id="metric-standard-users" class="text-xl font-bold text-emerald-600">2</div>
+            <p class="text-[11px] text-emerald-500">Базовый доступ к регламентам</p>
+          </div>
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+            <span class="text-xs text-slate-500">Заблокировано</span>
+            <div id="metric-blocked-users" class="text-xl font-bold text-red-600">0</div>
+            <p class="text-[11px] text-red-400">Изоляция по решению ИБ</p>
+          </div>
+        </div>
+
+        <!-- Таблица пользователей -->
+        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50">
+            <div class="flex items-center gap-2">
+              <i data-lucide="users-round" class="w-4 h-4 text-slate-500"></i>
+              <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Список корпоративных учетных записей</h3>
+            </div>
+            <div class="flex items-center gap-2">
+              <input type="text" id="user-search-filter" oninput="filterAdminUsers()" placeholder="Поиск по имени или email..." class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500 w-56">
+              <button onclick="loadAdminUsers()" class="p-1.5 bg-white border border-slate-200 hover:bg-slate-100 rounded-xl text-slate-600 transition" title="Обновить список">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th class="py-3 px-4">Сотрудник</th>
+                  <th class="py-3 px-4">Корпоративный Email</th>
+                  <th class="py-3 px-4">Департамент</th>
+                  <th class="py-3 px-4">Роль (RBAC)</th>
+                  <th class="py-3 px-4">Статус</th>
+                  <th class="py-3 px-4 text-right">Действия</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-table-body" class="divide-y divide-slate-100 text-slate-700">
+                <tr><td colspan="6" class="p-6 text-center text-slate-400">Загрузка реестра пользователей...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -712,13 +826,168 @@
   </div>
 
   <!-- ========================================================================= -->
+  <!-- МОДАЛЬНОЕ ОКНО: АВТОРИЗАЦИЯ В СИСТЕМЕ (ЛОГИН БЕЗ САМОРЕГИСТРАЦИИ) -->
+  <!-- ========================================================================= -->
+  <div id="modal-auth" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold shadow-sm">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Вход в защищенный корпоративный контур DocuMind</h3>
+            <p class="text-[11px] text-slate-500">Авторизация по защищенному протоколу 152-ФЗ</p>
+          </div>
+        </div>
+        <button onclick="closeAuthModal()" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4 text-xs">
+        <!-- Предупреждение о закрытой регистрации -->
+        <div class="p-3 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl text-[11px] leading-relaxed flex items-start gap-2">
+          <i data-lucide="lock" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
+          <div>
+            <b>Самостоятельная регистрация закрыта:</b> Доступ в закрытый корпоративный контур предоставляется исключительно системным администратором организации (приказ № 44-ОД).
+          </div>
+        </div>
+
+        <!-- Форма ручного логина -->
+        <form onsubmit="handleLoginForm(event)" class="space-y-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Корпоративный Email / Логин:</label>
+            <input type="email" id="login-email" required placeholder="например: admin@documind.intra" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Пароль учетной записи:</label>
+            <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          </div>
+
+          <div id="login-error-msg" class="hidden p-2.5 bg-red-50 border border-red-200 text-red-700 rounded-xl font-medium text-[11px]"></div>
+
+          <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-2">
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>Войти в систему</span>
+          </button>
+        </form>
+
+        <!-- Быстрый выбор учетных записей для защиты проекта -->
+        <div class="border-t border-slate-100 pt-3 space-y-2">
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Быстрый вход для демонстрации на защите (в 1 клик):</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="quickAuthLogin('admin@documind.intra', 'AdminPass123!')" class="p-2.5 bg-slate-50 hover:bg-indigo-50 hover:border-indigo-300 border border-slate-200 rounded-xl text-left transition space-y-0.5">
+              <div class="font-bold text-indigo-700 flex items-center gap-1">
+                <span>👑 Администратор</span>
+              </div>
+              <div class="text-[10px] text-slate-500 font-mono truncate">admin@documind.intra</div>
+            </button>
+            <button type="button" onclick="quickAuthLogin('sec_officer@documind.intra', 'SecOfficer123!')" class="p-2.5 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 border border-slate-200 rounded-xl text-left transition space-y-0.5">
+              <div class="font-bold text-blue-700 flex items-center gap-1">
+                <span>🛡️ Офицер ИБ</span>
+              </div>
+              <div class="text-[10px] text-slate-500 font-mono truncate">sec_officer@documind.intra</div>
+            </button>
+            <button type="button" onclick="quickAuthLogin('manager@documind.intra', 'ManagerPass123!')" class="p-2.5 bg-slate-50 hover:bg-emerald-50 hover:border-emerald-300 border border-slate-200 rounded-xl text-left transition space-y-0.5">
+              <div class="font-bold text-emerald-700 flex items-center gap-1">
+                <span>👔 HR Руководитель</span>
+              </div>
+              <div class="text-[10px] text-slate-500 font-mono truncate">manager@documind.intra</div>
+            </button>
+            <button type="button" onclick="quickAuthLogin('employee@documind.intra', 'UserPass123!')" class="p-2.5 bg-slate-50 hover:bg-slate-100 hover:border-slate-300 border border-slate-200 rounded-xl text-left transition space-y-0.5">
+              <div class="font-bold text-slate-700 flex items-center gap-1">
+                <span>💻 Инженер-разработчик</span>
+              </div>
+              <div class="text-[10px] text-slate-500 font-mono truncate">employee@documind.intra</div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- МОДАЛЬНОЕ ОКНО: ЗАВЕДЕНИЕ СОТРУДНИКА АДМИНИСТРАТОРОМ -->
+  <!-- ========================================================================= -->
+  <div id="modal-create-user" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+    <div class="bg-white rounded-2xl max-w-lg w-full flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-4 h-4 text-indigo-600"></i>
+          <h3 class="text-sm font-bold text-slate-900">Заведение нового сотрудника (Администратор)</h3>
+        </div>
+        <button onclick="closeCreateUserModal()" class="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form onsubmit="handleCreateUserForm(event)" class="p-6 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">ФИО сотрудника:</label>
+          <input type="text" id="new-user-name" required placeholder="например: Смирнов Алексей Павлович" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Корпоративный Email:</label>
+          <input type="email" id="new-user-email" required placeholder="a.smirnov@documind.intra" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Департамент:</label>
+            <select id="new-user-dept" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <option value="IT & Разработка">IT & Разработка</option>
+              <option value="Информационная Безопасность">Информационная Безопасность</option>
+              <option value="Кадры и HR">Кадры и HR</option>
+              <option value="Юридический департамент">Юридический департамент</option>
+              <option value="Бухгалтерия и Финансы">Бухгалтерия и Финансы</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-700 mb-1">Роль (RBAC доступ):</label>
+            <select id="new-user-role" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none">
+              <option value="user">User (Обычный доступ)</option>
+              <option value="manager">Manager (HR & Отпуска)</option>
+              <option value="security_officer">Security Officer (ИБ & Логи)</option>
+              <option value="admin">Admin (Полные права)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Первичный пароль (будет захэширован с солью):</label>
+          <input type="text" id="new-user-password" value="TempPass2026!" required class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:outline-none">
+          <span class="text-[10px] text-slate-400 mt-1 block">Сотрудник сможет сменить пароль при первом входе.</span>
+        </div>
+
+        <div id="new-user-error-msg" class="hidden p-2.5 bg-red-50 text-red-700 rounded-xl font-medium text-[11px]"></div>
+
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeCreateUserModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-semibold">Отмена</button>
+          <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-md shadow-indigo-500/20">Создать учетную запись</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
   <!-- КЛИЕНТСКАЯ ЛОГИКА (JAVASCRIPT) -->
   <!-- ========================================================================= -->
   <script>
     lucide.createIcons();
 
     const API_URL = (window.location.protocol.startsWith('http')) ? `${window.location.origin}/api` : 'http://localhost:8000/api';
+    let authToken = localStorage.getItem('documind_auth_token') || '';
     let currentUserRole = 'security_officer';
+    let currentUser = {
+      name: "Никита Ковалев",
+      role: "security_officer",
+      email: "sec_officer@documind.intra",
+      department: "Информационная Безопасность"
+    };
+    let adminUsersCache = [];
     let currentDeptFilter = 'all';
     let chatHistory = [];
     let ragSettings = {
@@ -732,33 +1001,370 @@
     // НАВИГАЦИЯ И ВКЛАДКИ
     // -------------------------------------------------------------------------
     function switchTab(t) {
-      ['chat', 'docs', 'oauth', 'analytics', 'billing', 'monitoring'].forEach(id => {
+      ['chat', 'docs', 'users', 'oauth', 'analytics', 'billing', 'monitoring'].forEach(id => {
         const view = document.getElementById('view-' + id);
         const nav = document.getElementById('nav-' + id);
+        if (!view || !nav) return;
         if (id === t) {
           view.classList.remove('hidden');
-          nav.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 shadow-sm transition";
+          nav.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold bg-blue-50 text-blue-700 shadow-sm transition";
         } else {
           view.classList.add('hidden');
-          nav.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition";
+          nav.className = "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition";
         }
       });
       lucide.createIcons();
       if (t === 'docs') loadDocuments();
+      if (t === 'users') loadAdminUsers();
       if (t === 'analytics') refreshAnalytics();
       if (t === 'monitoring') fetchAuditLogs();
     }
 
-    function changeRole() {
-      currentUserRole = document.getElementById('user-role-select').value;
-      triggerMetrikaGoal('ROLE_SWITCHED', { role: currentUserRole });
+    // -------------------------------------------------------------------------
+    // АВТОРИЗАЦИЯ И СЕССИИ (152-ФЗ)
+    // -------------------------------------------------------------------------
+    function openAuthModal() {
+      document.getElementById('modal-auth').classList.remove('hidden');
+      document.getElementById('login-error-msg').classList.add('hidden');
+    }
+
+    function closeAuthModal() {
+      document.getElementById('modal-auth').classList.add('hidden');
+    }
+
+    function quickAuthLogin(email, password) {
+      document.getElementById('login-email').value = email;
+      document.getElementById('login-password').value = password;
+      handleLoginForm(new Event('submit'));
+    }
+
+    async function handleLoginForm(e) {
+      if (e) e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+      const errBox = document.getElementById('login-error-msg');
+      errBox.classList.add('hidden');
+
+      try {
+        const res = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          errBox.textContent = data.details || data.error || 'Ошибка входа в систему';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        authToken = data.token;
+        localStorage.setItem('documind_auth_token', authToken);
+        currentUser = data.user;
+        currentUserRole = data.user.role;
+
+        updateHeaderProfile();
+        closeAuthModal();
+        triggerMetrikaGoal('AUTH_LOGIN_SUCCESS', { email: currentUser.email, role: currentUserRole });
+        loadDocuments();
+        if (!document.getElementById('view-users').classList.contains('hidden')) {
+          loadAdminUsers();
+        }
+      } catch (err) {
+        errBox.textContent = 'Ошибка соединения с сервером авторизации';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function logoutUser() {
+      try {
+        if (authToken) {
+          await fetch(`${API_URL}/auth/logout`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+        }
+      } catch (e) {}
+
+      authToken = '';
+      localStorage.removeItem('documind_auth_token');
+      currentUser = {
+        name: "Гостевой доступ",
+        role: "user",
+        email: "guest@corporate.intra",
+        department: "Общий отдел"
+      };
+      currentUserRole = 'user';
+      updateHeaderProfile();
       loadDocuments();
-      document.getElementById('oauth-session-view').textContent = JSON.stringify({
-        authenticated: true,
-        active_role: currentUserRole,
-        compliance_policy: "152-ФЗ РФ Active",
-        timestamp: new Date().toISOString()
-      }, null, 2);
+      alert('Вы вышли из защищенного корпоративного контура.');
+    }
+
+    function updateHeaderProfile() {
+      const nameEl = document.getElementById('header-user-name');
+      const badgeEl = document.getElementById('header-user-role-badge');
+      const avatarEl = document.getElementById('header-user-avatar');
+      const selectEl = document.getElementById('user-role-select');
+
+      if (nameEl) nameEl.textContent = currentUser.name || "Сотрудник";
+      if (selectEl) selectEl.value = currentUserRole;
+
+      const roleLabels = {
+        'admin': 'Администратор',
+        'security_officer': 'Офицер ИБ',
+        'manager': 'HR Руководитель',
+        'user': 'Инженер'
+      };
+      if (badgeEl) {
+        badgeEl.textContent = roleLabels[currentUserRole] || currentUserRole;
+        badgeEl.className = currentUserRole === 'admin' ? 'text-[9px] text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded font-bold' :
+          currentUserRole === 'security_officer' ? 'text-[9px] text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold' :
+          currentUserRole === 'manager' ? 'text-[9px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold' :
+          'text-[9px] text-slate-700 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded font-medium';
+      }
+
+      if (avatarEl) {
+        const initials = (currentUser.name || 'С').split(' ').map(w => w[0]).slice(0, 2).join('');
+        avatarEl.textContent = initials.toUpperCase();
+        avatarEl.className = currentUserRole === 'admin' ? 'w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold flex items-center justify-center text-xs shadow-sm' :
+          currentUserRole === 'security_officer' ? 'w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow-sm' :
+          currentUserRole === 'manager' ? 'w-8 h-8 rounded-lg bg-emerald-600 text-white font-bold flex items-center justify-center text-xs shadow-sm' :
+          'w-8 h-8 rounded-lg bg-slate-600 text-white font-bold flex items-center justify-center text-xs shadow-sm';
+      }
+
+      const sessionView = document.getElementById('oauth-session-view');
+      if (sessionView) {
+        sessionView.textContent = JSON.stringify({
+          authenticated: !!authToken,
+          token: authToken ? authToken.substring(0, 12) + '...' : null,
+          user: currentUser,
+          compliance_policy: "152-ФЗ РФ Active (Закрытый контур)"
+        }, null, 2);
+      }
+    }
+
+    async function changeRoleSelect() {
+      const selected = document.getElementById('user-role-select').value;
+      const roleAccounts = {
+        'admin': { email: 'admin@documind.intra', pass: 'AdminPass123!' },
+        'security_officer': { email: 'sec_officer@documind.intra', pass: 'SecOfficer123!' },
+        'manager': { email: 'manager@documind.intra', pass: 'ManagerPass123!' },
+        'user': { email: 'employee@documind.intra', pass: 'UserPass123!' }
+      };
+
+      if (roleAccounts[selected]) {
+        await quickAuthLogin(roleAccounts[selected].email, roleAccounts[selected].pass);
+      } else {
+        currentUserRole = selected;
+        currentUser.role = selected;
+        updateHeaderProfile();
+        triggerMetrikaGoal('ROLE_SWITCHED', { role: currentUserRole });
+        loadDocuments();
+        if (!document.getElementById('view-users').classList.contains('hidden')) {
+          loadAdminUsers();
+        }
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // УПРАВЛЕНИЕ ПОЛЬЗОВАТЕЛЯМИ (АДМИНИСТРАТОР)
+    // -------------------------------------------------------------------------
+    async function loadAdminUsers() {
+      const tbody = document.getElementById('admin-users-table-body');
+      tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Загрузка реестра пользователей...</td></tr>';
+
+      try {
+        const res = await fetch(`${API_URL}/admin/users`, {
+          headers: {
+            'X-User-Role': currentUserRole,
+            'Authorization': authToken ? `Bearer ${authToken}` : ''
+          }
+        });
+
+        if (res.status === 403) {
+          tbody.innerHTML = `
+            <tr><td colspan="6" class="p-8 text-center bg-red-50/50">
+              <div class="max-w-md mx-auto space-y-2">
+                <i data-lucide="shield-alert" class="w-8 h-8 text-red-500 mx-auto"></i>
+                <div class="font-bold text-red-800 text-xs">Отказ в доступе (152-ФЗ / RBAC)</div>
+                <p class="text-slate-600 text-[11px]">Просмотр и редактирование учетных записей сотрудников разрешены исключительно для роли <b>Admin (Администратор)</b>. Ваша текущая роль: <b>${currentUserRole}</b>.</p>
+                <button onclick="quickAuthLogin('admin@documind.intra', 'AdminPass123!')" class="mt-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold shadow-sm">
+                  Авторизоваться как Администратор
+                </button>
+              </div>
+            </td></tr>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        const data = await res.json();
+        adminUsersCache = data.users || [];
+        renderAdminUsersTable(adminUsersCache);
+
+        document.getElementById('metric-total-users').textContent = adminUsersCache.length;
+        document.getElementById('metric-privileged-users').textContent = adminUsersCache.filter(u => ['admin', 'security_officer'].includes(u.role)).length;
+        document.getElementById('metric-standard-users').textContent = adminUsersCache.filter(u => ['user', 'manager'].includes(u.role)).length;
+        document.getElementById('metric-blocked-users').textContent = adminUsersCache.filter(u => u.status === 'blocked').length;
+        document.getElementById('badge-users-count').textContent = adminUsersCache.length;
+
+      } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-red-500">Ошибка загрузки реестра сотрудников</td></tr>';
+      }
+    }
+
+    function renderAdminUsersTable(users) {
+      const tbody = document.getElementById('admin-users-table-body');
+      if (!users.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-slate-400">Сотрудники не найдены</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => {
+        const isMainAdmin = u.email === 'admin@documind.intra';
+        const roleBadges = {
+          'admin': '<span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded font-bold font-mono">ADMIN</span>',
+          'security_officer': '<span class="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded font-bold font-mono">SEC_OFFICER</span>',
+          'manager': '<span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded font-bold font-mono">MANAGER</span>',
+          'user': '<span class="px-2 py-0.5 bg-slate-100 text-slate-700 border border-slate-200 rounded font-medium font-mono">USER</span>'
+        };
+
+        const statusBadge = u.status === 'active'
+          ? '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Активен</span>'
+          : '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-200"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Заблокирован</span>';
+
+        return `
+          <tr class="hover:bg-slate-50 transition">
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[10px]">
+                  ${(u.name || 'С').charAt(0)}
+                </div>
+                <div>
+                  <div class="font-bold text-slate-900">${escapeHtml(u.name)}</div>
+                  <div class="text-[10px] text-slate-400 font-mono">${u.id}</div>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-4 font-mono text-[11px] text-slate-600">${escapeHtml(u.email)}</td>
+            <td class="py-3 px-4 text-slate-600">${escapeHtml(u.department || 'IT')}</td>
+            <td class="py-3 px-4">${roleBadges[u.role] || u.role}</td>
+            <td class="py-3 px-4">${statusBadge}</td>
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                ${!isMainAdmin ? `
+                  <button onclick="toggleUserStatus('${u.id}')" class="px-2.5 py-1 ${u.status === 'active' ? 'bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200'} rounded-lg text-[10px] font-bold transition">
+                    ${u.status === 'active' ? 'Блокировать' : 'Разблокировать'}
+                  </button>
+                  <button onclick="deleteUser('${u.id}')" class="p-1 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition" title="Удалить сотрудника">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                ` : '<span class="text-[10px] text-slate-400 italic">Главный админ</span>'}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+      lucide.createIcons();
+    }
+
+    function filterAdminUsers() {
+      const q = (document.getElementById('user-search-filter').value || '').toLowerCase().trim();
+      if (!q) {
+        renderAdminUsersTable(adminUsersCache);
+        return;
+      }
+      const filtered = adminUsersCache.filter(u =>
+        u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || (u.department || '').toLowerCase().includes(q)
+      );
+      renderAdminUsersTable(filtered);
+    }
+
+    function openCreateUserModal() {
+      document.getElementById('modal-create-user').classList.remove('hidden');
+      document.getElementById('new-user-error-msg').classList.add('hidden');
+    }
+
+    function closeCreateUserModal() {
+      document.getElementById('modal-create-user').classList.add('hidden');
+    }
+
+    async function handleCreateUserForm(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-user-name').value.trim();
+      const email = document.getElementById('new-user-email').value.trim();
+      const department = document.getElementById('new-user-dept').value;
+      const role = document.getElementById('new-user-role').value;
+      const password = document.getElementById('new-user-password').value.trim();
+      const errBox = document.getElementById('new-user-error-msg');
+      errBox.classList.add('hidden');
+
+      try {
+        const res = await fetch(`${API_URL}/admin/users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Role': currentUserRole,
+            'Authorization': authToken ? `Bearer ${authToken}` : ''
+          },
+          body: JSON.stringify({ name, email, department, role, password })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          errBox.textContent = data.error || 'Ошибка при создании пользователя';
+          errBox.classList.remove('hidden');
+          return;
+        }
+
+        alert(`✅ Сотрудник «${name}» успешно заведен в защищенный реестр!\nEmail: ${email}\nПароль захэширован по алгоритму SHA-256 с солью.`);
+        closeCreateUserModal();
+        loadAdminUsers();
+        triggerMetrikaGoal('ADMIN_USER_CREATED', { email, role });
+      } catch (err) {
+        errBox.textContent = 'Ошибка соединения с сервером';
+        errBox.classList.remove('hidden');
+      }
+    }
+
+    async function toggleUserStatus(userId) {
+      try {
+        const res = await fetch(`${API_URL}/admin/users/${userId}/toggle-status`, {
+          method: 'POST',
+          headers: {
+            'X-User-Role': currentUserRole,
+            'Authorization': authToken ? `Bearer ${authToken}` : ''
+          }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          loadAdminUsers();
+        } else {
+          alert(data.error || 'Ошибка изменения статуса');
+        }
+      } catch (e) {
+        alert('Ошибка связи с сервером');
+      }
+    }
+
+    async function deleteUser(userId) {
+      if (!confirm('Удалить данную учетную запись сотрудника и аннулировать все активные сессии?')) return;
+      try {
+        const res = await fetch(`${API_URL}/admin/users/${userId}`, {
+          method: 'DELETE',
+          headers: {
+            'X-User-Role': currentUserRole,
+            'Authorization': authToken ? `Bearer ${authToken}` : ''
+          }
+        });
+        const data = await res.json();
+        if (res.ok) {
+          loadAdminUsers();
+        } else {
+          alert(data.error || 'Ошибка удаления');
+        }
+      } catch (e) {
+        alert('Ошибка связи с сервером');
+      }
     }
 
     // -------------------------------------------------------------------------
@@ -794,12 +1400,15 @@
       triggerMetrikaGoal('SEARCH_QUERY_SENT', { query: q });
 
       try {
+        const searchHeaders = {
+          'Content-Type': 'application/json',
+          'X-User-Role': currentUserRole
+        };
+        if (authToken) searchHeaders['Authorization'] = `Bearer ${authToken}`;
+
         const res = await fetch(`${API_URL}/search`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-User-Role': currentUserRole
-          },
+          headers: searchHeaders,
           body: JSON.stringify({
             query: q,
             model: ragSettings.model,
@@ -934,8 +1543,11 @@
         if (currentDeptFilter !== 'all') {
           url += `?department=${encodeURIComponent(currentDeptFilter)}`;
         }
+        const docHeaders = { 'X-User-Role': currentUserRole };
+        if (authToken) docHeaders['Authorization'] = `Bearer ${authToken}`;
+
         const res = await fetch(url, {
-          headers: { 'X-User-Role': currentUserRole }
+          headers: docHeaders
         });
         const json = await res.json();
 
@@ -999,7 +1611,9 @@
 
     async function deleteDocument(docId) {
       if (!confirm('Удалить данный документ и все его векторные эмбеддинги?')) return;
-      await fetch(`${API_URL}/documents/${docId}`, { method: 'DELETE' });
+      const delHeaders = { 'X-User-Role': currentUserRole };
+      if (authToken) delHeaders['Authorization'] = `Bearer ${authToken}`;
+      await fetch(`${API_URL}/documents/${docId}`, { method: 'DELETE', headers: delHeaders });
       loadDocuments();
     }
 
@@ -1016,8 +1630,10 @@
       contentEl.textContent = 'Загрузка полного текста регламента...';
 
       try {
+        const viewHeaders = { 'X-User-Role': currentUserRole };
+        if (authToken) viewHeaders['Authorization'] = `Bearer ${authToken}`;
         const res = await fetch(`${API_URL}/documents/${docId}`, {
-          headers: { 'X-User-Role': currentUserRole }
+          headers: viewHeaders
         });
         if (res.status === 403) {
           contentEl.innerHTML = '<div class="p-4 bg-red-50 text-red-700 rounded-xl font-sans"><b>Отказ доступа (152-ФЗ РФ):</b> Данный документ имеет гриф CONFIDENTIAL и заблокирован для текущей роли пользователя.</div>';
@@ -1095,9 +1711,15 @@
       statusBox.classList.remove('hidden');
 
       try {
+        const uploadHeaders = {
+          'Content-Type': 'application/json',
+          'X-User-Role': currentUserRole
+        };
+        if (authToken) uploadHeaders['Authorization'] = `Bearer ${authToken}`;
+
         const res = await fetch(`${API_URL}/documents/upload`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: uploadHeaders,
           body: JSON.stringify({ title, department, access_level, content })
         });
         const data = await res.json();
@@ -1360,8 +1982,31 @@
       return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 
+    async function initAuthSession() {
+      if (authToken) {
+        try {
+          const res = await fetch(`${API_URL}/auth/me`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            currentUserRole = data.user.role;
+          } else {
+            authToken = '';
+            localStorage.removeItem('documind_auth_token');
+          }
+        } catch (e) {
+          console.warn('Auth check offline or failed', e);
+        }
+      }
+      updateHeaderProfile();
+    }
+
     // Начальная загрузка
-    loadDocuments();
+    initAuthSession().then(() => {
+      loadDocuments();
+    });
   </script>
 </body>
 </html>
