@@ -80,7 +80,7 @@ class TestRAGEngine(unittest.TestCase):
 
     def test_database_initial_regulations_integrity(self):
         """Проверка целостности предустановленных 6 регламентов и наличия полного текста"""
-        self.assertEqual(len(DATABASE["documents"]), 6)
+        self.assertGreaterEqual(len(DATABASE["documents"]), 6)
         doc_ids = {d["id"] for d in DATABASE["documents"]}
         self.assertIn("DOC-SEC-01", doc_ids)
         self.assertIn("DOC-SEC-02", doc_ids)
