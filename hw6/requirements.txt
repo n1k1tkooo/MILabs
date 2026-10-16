@@ -1,5 +1,1 @@
-flake8>=6.1.0
-ruff>=0.1.0
-mypy>=1.6.0
-bandit>=1.7.5
-pip-audit>=2.6.0
+# DocuMind AI Enterprise — Pure Python 3 Standard Library

@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "framework": null,
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index.py" },
+    { "source": "/", "destination": "/hw6/index.html" },
+    { "source": "/screenshots/(.*)", "destination": "/hw6/screenshots/$1" },
+    { "source": "/(.*)", "destination": "/hw6/$1" }
+  ]
+}
